@@ -61,8 +61,8 @@ type Fpdf struct {
 
 //SetLineWidth : set line width
 func (gp *Fpdf) SetLineWidth(width float64) {
-	gp.curr.lineWidth = width
-	gp.getContent().AppendStreamSetLineWidth(width)
+	gp.curr.lineWidth = gp.UnitsToPoints(width)
+	gp.getContent().AppendStreamSetLineWidth(gp.UnitsToPoints(width))
 }
 
 //SetCompressLevel : set compress Level for content streams
@@ -102,16 +102,19 @@ func (gp *Fpdf) SetLineType(linetype string) {
 
 //Line : draw line
 func (gp *Fpdf) Line(x1 float64, y1 float64, x2 float64, y2 float64) {
+	gp.UnitsToPointsVar(&x1, &y1, &x2, &y2)
 	gp.getContent().AppendStreamLine(x1, y1, x2, y2)
 }
 
 //RectFromLowerLeft : draw rectangle from lower-left corner (x, y)
 func (gp *Fpdf) RectFromLowerLeft(x float64, y float64, wdth float64, hght float64) {
+	gp.UnitsToPointsVar(&x, &y, &wdth, &hght)
 	gp.getContent().AppendStreamRectangle(x, y, wdth, hght, "")
 }
 
 //RectFromUpperLeft : draw rectangle from upper-left corner (x, y)
 func (gp *Fpdf) RectFromUpperLeft(x float64, y float64, wdth float64, hght float64) {
+	gp.UnitsToPointsVar(&x, &y, &wdth, &hght)
 	gp.getContent().AppendStreamRectangle(x, y+hght, wdth, hght, "")
 }
 
@@ -121,6 +124,7 @@ func (gp *Fpdf) RectFromUpperLeft(x float64, y float64, wdth float64, hght float
 //		F: fill
 //		DF or FD: draw and fill
 func (gp *Fpdf) RectFromLowerLeftWithStyle(x float64, y float64, wdth float64, hght float64, style string) {
+	gp.UnitsToPointsVar(&x, &y, &wdth, &hght)
 	gp.getContent().AppendStreamRectangle(x, y, wdth, hght, style)
 }
 
@@ -130,16 +134,19 @@ func (gp *Fpdf) RectFromLowerLeftWithStyle(x float64, y float64, wdth float64, h
 //		F: fill
 //		DF or FD: draw and fill
 func (gp *Fpdf) RectFromUpperLeftWithStyle(x float64, y float64, wdth float64, hght float64, style string) {
+	gp.UnitsToPointsVar(&x, &y, &wdth, &hght)
 	gp.getContent().AppendStreamRectangle(x, y+hght, wdth, hght, style)
 }
 
 //Oval : draw oval
 func (gp *Fpdf) Oval(x1 float64, y1 float64, x2 float64, y2 float64) {
+	gp.UnitsToPointsVar(&x1, &y1, &x2, &y2)
 	gp.getContent().AppendStreamOval(x1, y1, x2, y2)
 }
 
 //Br : new line
 func (gp *Fpdf) Br(h float64) {
+	gp.UnitsToPointsVar(&h)
 	gp.curr.Y += h
 	gp.curr.X = gp.leftMargin
 }
@@ -158,38 +165,48 @@ func (gp *Fpdf) SetGrayStroke(grayScale float64) {
 
 //SetLeftMargin : set left margin
 func (gp *Fpdf) SetLeftMargin(margin float64) {
+	gp.UnitsToPointsVar(&margin)
 	gp.leftMargin = margin
 }
 
 //SetTopMargin : set top margin
 func (gp *Fpdf) SetTopMargin(margin float64) {
+	gp.UnitsToPointsVar(&margin)
 	gp.topMargin = margin
 }
 
 //SetX : set current position X
 func (gp *Fpdf) SetX(x float64) {
+	gp.UnitsToPointsVar(&x)
 	gp.curr.setXCount++
 	gp.curr.X = x
 }
 
 //GetX : get current position X
 func (gp *Fpdf) GetX() float64 {
-	return gp.curr.X
+	return gp.PointsToUnits(gp.curr.X)
 }
 
 //SetY : set current position y
 func (gp *Fpdf) SetY(y float64) {
+	gp.UnitsToPointsVar(&y)
 	gp.curr.Y = y
 }
 
 //GetY : get current position y
 func (gp *Fpdf) GetY() float64 {
-	return gp.curr.Y
+	return gp.PointsToUnits(gp.curr.Y)
 }
 
 //ImageByHolder : draw image by ImageHolder
 func (gp *Fpdf) ImageByHolder(img ImageHolder, x float64, y float64, rect *Rect) error {
+	gp.UnitsToPointsVar(&x, &y)
+	rect = rect.UnitsToPoints(gp.config.Unit)
 
+	return gp.imageByHolder(img, x, y, rect)
+}
+
+func (gp *Fpdf) imageByHolder(img ImageHolder, x float64, y float64, rect *Rect) error {
 	cacheImageIndex := -1
 	for _, imgcache := range gp.curr.ImgCaches {
 		if img.ID() == imgcache.Path {
@@ -274,11 +291,14 @@ func (gp *Fpdf) ImageByHolder(img ImageHolder, x float64, y float64, rect *Rect)
 
 //Image : draw image
 func (gp *Fpdf) Image(picPath string, x float64, y float64, rect *Rect) error {
+	gp.UnitsToPointsVar(&x, &y)
+	rect = rect.UnitsToPoints(gp.config.Unit)
+
 	imgh, err := ImageHolderByPath(picPath)
 	if err != nil {
 		return err
 	}
-	return gp.ImageByHolder(imgh, x, y, rect)
+	return gp.imageByHolder(imgh, x, y, rect)
 }
 
 //AddPage : add new page
@@ -289,6 +309,8 @@ func (gp *Fpdf) AddPage() {
 
 //AddPageWithOption  : add new page with option
 func (gp *Fpdf) AddPageWithOption(opt PageOption) {
+	opt.PageSize = opt.PageSize.UnitsToPoints(gp.config.Unit)
+
 	page := new(PageObj)
 	page.init(func() *Fpdf {
 		return gp
@@ -485,6 +507,7 @@ func (gp *Fpdf) Text(text string) error {
 
 //CellWithOption create cell of text ( use current x,y is upper-left corner of cell)
 func (gp *Fpdf) CellWithOption(rectangle *Rect, text string, opt CellOption) error {
+	rectangle = rectangle.UnitsToPoints(gp.config.Unit)
 	err := gp.curr.Font_ISubset.AddChars(text)
 	if err != nil {
 		return err
@@ -499,6 +522,7 @@ func (gp *Fpdf) CellWithOption(rectangle *Rect, text string, opt CellOption) err
 //Cell : create cell of text ( use current x,y is upper-left corner of cell)
 //Note that this has no effect on Rect.H pdf (now). Fix later :-)
 func (gp *Fpdf) Cell(rectangle *Rect, text string) error {
+	rectangle = rectangle.UnitsToPoints(gp.config.Unit)
 
 	defaultopt := CellOption{
 		Align:  Left | Top,
@@ -520,17 +544,19 @@ func (gp *Fpdf) Cell(rectangle *Rect, text string) error {
 
 //AddLink
 func (gp *Fpdf) AddExternalLink(url string, x, y, w, h float64) {
+	gp.UnitsToPointsVar(&x, &y, &w, &h)
 	page := gp.pdfObjs[gp.curr.IndexOfPageObj].(*PageObj)
 	page.Links = append(page.Links, linkOption{x, gp.config.PageSize.H - y, w, h, url, ""})
 }
 
 func (gp *Fpdf) AddInternalLink(anchor string, x, y, w, h float64) {
+	gp.UnitsToPointsVar(&x, &y, &w, &h)
 	page := gp.pdfObjs[gp.curr.IndexOfPageObj].(*PageObj)
 	page.Links = append(page.Links, linkOption{x, gp.config.PageSize.H - y, w, h, "", anchor})
 }
 
 func (gp *Fpdf) SetAnchor(name string) {
-	y := gp.config.PageSize.H - gp.GetY() + float64(gp.curr.Font_Size)
+	y := gp.config.PageSize.H - gp.curr.Y + float64(gp.curr.Font_Size)
 	gp.anchors[name] = anchorOption{gp.curr.IndexOfPageObj, y}
 }
 
@@ -659,7 +685,7 @@ func (gp *Fpdf) SetFillColor(r uint8, g uint8, b uint8) {
 }
 
 //MeasureTextWidth : measure Width of text (use current font)
-func (gp *Fpdf) MeasureTextWidth(text string) (float64, error) {
+func (gp *Fpdf) MeasureTextWidth(text string, units int) (float64, error) {
 
 	err := gp.curr.Font_ISubset.AddChars(text) //AddChars for create CharacterToGlyphIndex
 	if err != nil {
@@ -670,7 +696,7 @@ func (gp *Fpdf) MeasureTextWidth(text string) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return textWidthPdfUnit, nil
+	return PointsToUnits(units, textWidthPdfUnit), nil
 }
 
 //Curve Draws a Bézier curve (the Bézier curve is tangent to the line between the control points at either end of the curve)
@@ -681,6 +707,7 @@ func (gp *Fpdf) MeasureTextWidth(text string) (float64, error) {
 // - x3, y3: End point
 // - style: Style of rectangule (draw and/or fill: D, F, DF, FD)
 func (gp *Fpdf) Curve(x0 float64, y0 float64, x1 float64, y1 float64, x2 float64, y2 float64, x3 float64, y3 float64, style string) {
+	gp.UnitsToPointsVar(&x0, &y0, &x1, &y1, &x2, &y2, &x3, &y3)
 	gp.getContent().AppendStreamCurve(x0, y0, x1, y1, x2, y2, x3, y3, style)
 }
 
@@ -701,6 +728,7 @@ func (gp *Fpdf) SetInfo(info PdfInfo) {
 // angle is angle in degrees.
 // x, y is rotation center
 func (gp *Fpdf) Rotate(angle, x, y float64) {
+	gp.UnitsToPointsVar(&x, &y)
 	gp.getContent().appendRotate(angle, x, y)
 }
 
@@ -713,7 +741,6 @@ func (gp *Fpdf) RotateReset() {
 
 //init
 func (gp *Fpdf) init() {
-
 	//default
 	gp.leftMargin = 10.0
 	gp.topMargin = 10.0
@@ -738,6 +765,9 @@ func (gp *Fpdf) init() {
 
 	// default to zlib.DefaultCompression
 	gp.compressLevel = zlib.DefaultCompression
+
+	// change the unit type
+	gp.config.PageSize = gp.config.PageSize.UnitsToPoints(gp.config.Unit)
 }
 
 func (gp *Fpdf) resetCurrXY() {
@@ -899,6 +929,22 @@ func (gp *Fpdf) getContent() *ContentObj {
 		content = gp.pdfObjs[gp.indexOfContent].(*ContentObj)
 	}
 	return content
+}
+
+func (gp *Fpdf) UnitsToPoints(u float64) float64 {
+	return UnitsToPoints(gp.config.Unit, u)
+}
+
+func (gp *Fpdf) UnitsToPointsVar(u ...*float64) {
+	UnitsToPointsVar(gp.config.Unit, u...)
+}
+
+func (gp *Fpdf) PointsToUnits(u float64) float64 {
+	return PointsToUnits(gp.config.Unit, u)
+}
+
+func (gp *Fpdf) PointsToUnitsVar(u ...*float64) {
+	PointsToUnitsVar(gp.config.Unit, u...)
 }
 
 func encodeUtf8(str string) string {

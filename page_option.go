@@ -2,12 +2,13 @@ package gofpdf
 
 //PageOption option of page
 type PageOption struct {
-	PageSize Rect
+	PageSize *Rect
 }
 
 func (p PageOption) isEmpty() bool {
-	if p.PageSize.H == 0 && p.PageSize.W == 0 {
+	if p.PageSize == nil {
 		return true
 	}
+
 	return false
 }
