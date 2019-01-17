@@ -15,12 +15,16 @@ import (
 
 const subsetFont = "SubsetFont"
 
+// the default margin if no margins are set
+const defaultMargin = 1 * conversion_Unit_CM
+
 //Fpdf : A simple library for generating PDF written in Go lang
 type Fpdf struct {
 
 	//page Margin
-	leftMargin float64
-	topMargin  float64
+	// leftMargin float64
+	// topMargin  float64
+	margins Margins
 
 	pdfObjs []IObj
 	config  Config
@@ -148,7 +152,7 @@ func (gp *Fpdf) Oval(x1 float64, y1 float64, x2 float64, y2 float64) {
 func (gp *Fpdf) Br(h float64) {
 	gp.UnitsToPointsVar(&h)
 	gp.curr.Y += h
-	gp.curr.X = gp.leftMargin
+	gp.curr.X = gp.margins.Left
 }
 
 //SetGrayFill set the grayscale for the fill, takes a float64 between 0.0 and 1.0
@@ -163,16 +167,16 @@ func (gp *Fpdf) SetGrayStroke(grayScale float64) {
 	gp.getContent().AppendStreamSetGrayStroke(grayScale)
 }
 
-//SetLeftMargin : set left margin
-func (gp *Fpdf) SetLeftMargin(margin float64) {
-	gp.UnitsToPointsVar(&margin)
-	gp.leftMargin = margin
+// SetMargins defines the left, top, right and bottom margins. By default, they equal 1 cm. Call this method to change them.
+func (gp *Fpdf) SetMargins(left, top, right, bottom float64) {
+	gp.UnitsToPointsVar(&left, &top, &right, &bottom)
+	gp.margins = Margins{left, top, right, bottom}
 }
 
-//SetTopMargin : set top margin
-func (gp *Fpdf) SetTopMargin(margin float64) {
-	gp.UnitsToPointsVar(&margin)
-	gp.topMargin = margin
+// GetMargins gets the current margins, The margins will be converted back to the documents units
+func (gp *Fpdf) GetMargins() Margins {
+	gp.PointsToUnitsVar(&gp.margins.Left, &gp.margins.Top, &gp.margins.Right, &gp.margins.Bottom)
+	return gp.margins
 }
 
 //SetX : set current position X
@@ -742,8 +746,12 @@ func (gp *Fpdf) RotateReset() {
 //init
 func (gp *Fpdf) init() {
 	//default
-	gp.leftMargin = 10.0
-	gp.topMargin = 10.0
+	gp.margins = Margins{
+		Left:   defaultMargin,
+		Top:    defaultMargin,
+		Right:  defaultMargin,
+		Bottom: defaultMargin,
+	}
 
 	//init curr
 	gp.resetCurrXY()
@@ -771,8 +779,8 @@ func (gp *Fpdf) init() {
 }
 
 func (gp *Fpdf) resetCurrXY() {
-	gp.curr.X = gp.leftMargin
-	gp.curr.Y = gp.topMargin
+	gp.curr.X = gp.margins.Left
+	gp.curr.Y = gp.margins.Top
 }
 
 func (gp *Fpdf) isUseProtection() bool {
@@ -931,18 +939,22 @@ func (gp *Fpdf) getContent() *ContentObj {
 	return content
 }
 
+// UnitsToPoints converts the units to the documents unit type
 func (gp *Fpdf) UnitsToPoints(u float64) float64 {
 	return UnitsToPoints(gp.config.Unit, u)
 }
 
+// UnitsToPointsVar converts the units to the documents unit type for all variables passed in
 func (gp *Fpdf) UnitsToPointsVar(u ...*float64) {
 	UnitsToPointsVar(gp.config.Unit, u...)
 }
 
+// PointsToUnits converts the points to the documents unit type
 func (gp *Fpdf) PointsToUnits(u float64) float64 {
 	return PointsToUnits(gp.config.Unit, u)
 }
 
+// PointsToUnits converts the points to the documents unit type for all variables passed in
 func (gp *Fpdf) PointsToUnitsVar(u ...*float64) {
 	PointsToUnitsVar(gp.config.Unit, u...)
 }
