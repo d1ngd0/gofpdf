@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 import (
 	"compress/zlib"
@@ -7,7 +7,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/signintech/gopdf/fontmaker/core"
+	"github.com/signintech/gofpdf/fontmaker/core"
 )
 
 //EntrySelectors entry selectors

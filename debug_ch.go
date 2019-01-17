@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 var ch = []byte{
 	00,

@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 import (
 	"bytes"
@@ -313,7 +313,7 @@ func (gp *GoPdf) AddPageWithOption(opt PageOption) {
 	gp.resetCurrXY()
 }
 
-//Start : init gopdf
+//Start : init gofpdf
 func (gp *GoPdf) Start(config Config) {
 
 	gp.config = config

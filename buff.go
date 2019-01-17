@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 //Buff for pdf content
 type Buff struct {

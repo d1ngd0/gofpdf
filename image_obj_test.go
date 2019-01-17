@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 import (
 	"testing"

@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 //Current current state
 type Current struct {

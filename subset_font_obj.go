@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 
 	"io"
 
-	"github.com/signintech/gopdf/fontmaker/core"
+	"github.com/signintech/gofpdf/fontmaker/core"
 )
 
 //ErrCharNotFound char not found

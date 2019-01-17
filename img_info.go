@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 type imgInfo struct {
 	w, h int

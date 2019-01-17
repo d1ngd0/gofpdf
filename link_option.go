@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 type anchorOption struct {
 	page int

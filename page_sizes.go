@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 var PageSizeLetter = Rect{W: 612, H: 792}
 var PageSizeLetterSmall = Rect{W: 612, H: 792}

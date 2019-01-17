@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 //TtfOption  font option
 type TtfOption struct {

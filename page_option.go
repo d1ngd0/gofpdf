@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 //PageOption option of page
 type PageOption struct {

@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 type Rect struct {
 	W float64

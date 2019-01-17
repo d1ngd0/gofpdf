@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 //Config static config
 type Config struct {

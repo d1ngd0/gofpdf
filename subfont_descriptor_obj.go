@@ -1,10 +1,10 @@
-package gopdf
+package gofpdf
 
 import (
 	"fmt"
 	"io"
 
-	"github.com/signintech/gopdf/fontmaker/core"
+	"github.com/signintech/gofpdf/fontmaker/core"
 )
 
 //SubfontDescriptorObj pdf subfont descriptorObj object

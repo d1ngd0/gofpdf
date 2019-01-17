@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 func parseStyle(style string) string {
 	op := "S"

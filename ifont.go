@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 type IFont interface {
 	Init()

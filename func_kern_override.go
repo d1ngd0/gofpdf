@@ -1,4 +1,4 @@
-package gopdf
+package gofpdf
 
 //FuncKernOverride  return your custome pair value
 type FuncKernOverride func(
