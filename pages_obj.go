@@ -9,10 +9,10 @@ import (
 type PagesObj struct { //impl IObj
 	PageCount int
 	Kids      string
-	getRoot   func() *GoPdf
+	getRoot   func() *Fpdf
 }
 
-func (p *PagesObj) init(funcGetRoot func() *GoPdf) {
+func (p *PagesObj) init(funcGetRoot func() *Fpdf) {
 	p.PageCount = 0
 	p.getRoot = funcGetRoot
 }

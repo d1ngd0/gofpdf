@@ -10,10 +10,10 @@ type ProcSetObj struct {
 	//Font
 	Realtes     RelateFonts
 	RealteXobjs RealteXobjects
-	getRoot     func() *GoPdf
+	getRoot     func() *Fpdf
 }
 
-func (pr *ProcSetObj) init(funcGetRoot func() *GoPdf) {
+func (pr *ProcSetObj) init(funcGetRoot func() *Fpdf) {
 	pr.getRoot = funcGetRoot
 }
 

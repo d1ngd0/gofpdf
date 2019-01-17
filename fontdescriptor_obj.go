@@ -10,7 +10,7 @@ type FontDescriptorObj struct {
 	fontFileObjRelate string
 }
 
-func (f *FontDescriptorObj) init(funcGetRoot func() *GoPdf) {
+func (f *FontDescriptorObj) init(funcGetRoot func() *Fpdf) {
 
 }
 

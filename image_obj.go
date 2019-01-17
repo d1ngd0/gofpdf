@@ -19,10 +19,10 @@ type ImageObj struct {
 	rawImgReader  *bytes.Reader
 	imginfo       imgInfo
 	pdfProtection *PDFProtection
-	//getRoot func() *GoPdf
+	//getRoot func() *Fpdf
 }
 
-func (i *ImageObj) init(funcGetRoot func() *GoPdf) {
+func (i *ImageObj) init(funcGetRoot func() *Fpdf) {
 
 }
 

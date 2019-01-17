@@ -13,7 +13,7 @@ type EncryptionObj struct {
 	pValue int    //P entry in pdf document
 }
 
-func (e *EncryptionObj) init(func() *GoPdf) {
+func (e *EncryptionObj) init(func() *Fpdf) {
 
 }
 

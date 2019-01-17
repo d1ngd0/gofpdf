@@ -8,10 +8,10 @@ import (
 //DeviceRGBObj  DeviceRGB
 type DeviceRGBObj struct {
 	data    []byte
-	getRoot func() *GoPdf
+	getRoot func() *Fpdf
 }
 
-func (d *DeviceRGBObj) init(funcGetRoot func() *GoPdf) {
+func (d *DeviceRGBObj) init(funcGetRoot func() *Fpdf) {
 	d.getRoot = funcGetRoot
 }
 

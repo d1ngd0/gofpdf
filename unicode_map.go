@@ -8,11 +8,11 @@ import (
 //UnicodeMap unicode map
 type UnicodeMap struct {
 	PtrToSubsetFontObj *SubsetFontObj
-	//getRoot            func() *GoPdf
+	//getRoot            func() *Fpdf
 	pdfProtection *PDFProtection
 }
 
-func (u *UnicodeMap) init(funcGetRoot func() *GoPdf) {
+func (u *UnicodeMap) init(funcGetRoot func() *Fpdf) {
 	//u.getRoot = funcGetRoot
 }
 

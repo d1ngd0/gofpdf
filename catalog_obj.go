@@ -9,7 +9,7 @@ import (
 type CatalogObj struct { //impl IObj
 }
 
-func (c *CatalogObj) init(funcGetRoot func() *GoPdf) {
+func (c *CatalogObj) init(funcGetRoot func() *Fpdf) {
 
 }
 

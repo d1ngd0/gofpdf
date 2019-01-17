@@ -25,11 +25,11 @@ var ErrNotSupportShortIndexYet = errors.New("not suport none short index yet")
 //PdfDictionaryObj pdf dictionary object
 type PdfDictionaryObj struct {
 	PtrToSubsetFontObj *SubsetFontObj
-	//getRoot            func() *GoPdf
+	//getRoot            func() *Fpdf
 	pdfProtection *PDFProtection
 }
 
-func (p *PdfDictionaryObj) init(funcGetRoot func() *GoPdf) {
+func (p *PdfDictionaryObj) init(funcGetRoot func() *Fpdf) {
 	//p.getRoot = funcGetRoot
 }
 

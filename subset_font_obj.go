@@ -24,7 +24,7 @@ type SubsetFontObj struct {
 	funcKernOverride      FuncKernOverride
 }
 
-func (s *SubsetFontObj) init(funcGetRoot func() *GoPdf) {
+func (s *SubsetFontObj) init(funcGetRoot func() *Fpdf) {
 	s.CharacterToGlyphIndex = NewMapOfCharacterToGlyphIndex() //make(map[rune]uint)
 	s.funcKernOverride = nil
 }
