@@ -41,7 +41,7 @@ func main() {
 
 func echoUsage() {
 	var buff bytes.Buffer
-	buff.WriteString("fontmaker is tool for making font file to use with gopdf.\n")
+	buff.WriteString("fontmaker is tool for making font file to use with gofpdf.\n")
 	buff.WriteString("\nUsage:\n")
 	buff.WriteString("\tfontmaker encoding map_folder font_file output_folder\n")
 	buff.WriteString("\nExample:\n")

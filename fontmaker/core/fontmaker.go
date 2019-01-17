@@ -108,10 +108,10 @@ func (f *FontMaker) MakeDefinitionFile(gofontname string, mappath string, export
 	str += "\tfamily string\n"
 	str += "\tfonttype string\n"
 	str += "\tname string\n"
-	str += "\tdesc  []gopdf.FontDescItem\n"
+	str += "\tdesc  []gofpdf.FontDescItem\n"
 	str += "\tup int\n"
 	str += "\tut int\n"
-	str += "\tcw gopdf.FontCw\n"
+	str += "\tcw gofpdf.FontCw\n"
 	str += "\tenc string\n"
 	str += "\tdiff string\n"
 	str += "}\n"
@@ -171,7 +171,7 @@ func (f *FontMaker) MakeDefinitionFile(gofontname string, mappath string, export
 	str += "func (me * " + gofontname + ")GetName() string{\n"
 	str += "\treturn me.name\n"
 	str += "}	\n"
-	str += "func (me * " + gofontname + ")GetDesc() []gopdf.FontDescItem{\n"
+	str += "func (me * " + gofontname + ")GetDesc() []gofpdf.FontDescItem{\n"
 	str += "\treturn me.desc\n"
 	str += "}\n"
 	str += "func (me * " + gofontname + ")GetUp() int{\n"
@@ -180,7 +180,7 @@ func (f *FontMaker) MakeDefinitionFile(gofontname string, mappath string, export
 	str += "func (me * " + gofontname + ")GetUt()  int{\n"
 	str += "\treturn me.ut\n"
 	str += "}\n"
-	str += "func (me * " + gofontname + ")GetCw() gopdf.FontCw{\n"
+	str += "func (me * " + gofontname + ")GetCw() gofpdf.FontCw{\n"
 	str += "\treturn me.cw\n"
 	str += "}\n"
 	str += "func (me * " + gofontname + ")GetEnc() string{\n"
@@ -213,28 +213,28 @@ func (f *FontMaker) MakeDefinitionFile(gofontname string, mappath string, export
 func (f *FontMaker) MakeFontDescriptor(info TtfInfo) (string, error) {
 
 	fd := ""
-	fd = "\tme.desc = make([]gopdf.FontDescItem,8)\n"
+	fd = "\tme.desc = make([]gofpdf.FontDescItem,8)\n"
 
 	// Ascent
 	ascender, err := info.GetInt64("Ascender")
 	if err != nil {
 		return "", err
 	}
-	fd += fmt.Sprintf("\tme.desc[0] =  gopdf.FontDescItem{ Key:\"Ascent\",Val : \"%d\" }\n", ascender)
+	fd += fmt.Sprintf("\tme.desc[0] =  gofpdf.FontDescItem{ Key:\"Ascent\",Val : \"%d\" }\n", ascender)
 
 	// Descent
 	descender, err := info.GetInt64("Descender")
 	if err != nil {
 		return "", err
 	}
-	fd += fmt.Sprintf("\tme.desc[1] =  gopdf.FontDescItem{ Key: \"Descent\", Val : \"%d\" }\n", descender)
+	fd += fmt.Sprintf("\tme.desc[1] =  gofpdf.FontDescItem{ Key: \"Descent\", Val : \"%d\" }\n", descender)
 
 	// CapHeight
 	capHeight, err := info.GetInt64("CapHeight")
 	if err == nil {
-		fd += fmt.Sprintf("\tme.desc[2] =  gopdf.FontDescItem{ Key:\"CapHeight\", Val :  \"%d\" }\n", capHeight)
+		fd += fmt.Sprintf("\tme.desc[2] =  gofpdf.FontDescItem{ Key:\"CapHeight\", Val :  \"%d\" }\n", capHeight)
 	} else if err == ERROR_NO_KEY_FOUND {
-		fd += fmt.Sprintf("\tme.desc[2] =  gopdf.FontDescItem{ Key:\"CapHeight\", Val :  \"%d\" }\n", ascender)
+		fd += fmt.Sprintf("\tme.desc[2] =  gofpdf.FontDescItem{ Key:\"CapHeight\", Val :  \"%d\" }\n", ascender)
 	} else {
 		return "", err
 	}
@@ -254,17 +254,17 @@ func (f *FontMaker) MakeFontDescriptor(info TtfInfo) (string, error) {
 	if italicAngle != 0 {
 		flags += 1 << 6
 	}
-	fd += fmt.Sprintf("\tme.desc[3] =  gopdf.FontDescItem{ Key: \"Flags\", Val :  \"%d\" }\n", flags)
+	fd += fmt.Sprintf("\tme.desc[3] =  gofpdf.FontDescItem{ Key: \"Flags\", Val :  \"%d\" }\n", flags)
 	//fmt.Printf("\n----\n")
 	// FontBBox
 	fbb, err := info.GetInt64s("FontBBox")
 	if err != nil {
 		return "", err
 	}
-	fd += fmt.Sprintf("\tme.desc[4] =  gopdf.FontDescItem{ Key:\"FontBBox\", Val :  \"[%d %d %d %d]\" }\n", fbb[0], fbb[1], fbb[2], fbb[3])
+	fd += fmt.Sprintf("\tme.desc[4] =  gofpdf.FontDescItem{ Key:\"FontBBox\", Val :  \"[%d %d %d %d]\" }\n", fbb[0], fbb[1], fbb[2], fbb[3])
 
 	// ItalicAngle
-	fd += fmt.Sprintf("\tme.desc[5] =  gopdf.FontDescItem{ Key:\"ItalicAngle\", Val :  \"%d\" }\n", italicAngle)
+	fd += fmt.Sprintf("\tme.desc[5] =  gofpdf.FontDescItem{ Key:\"ItalicAngle\", Val :  \"%d\" }\n", italicAngle)
 
 	// StemV
 	stdVW, err := info.GetInt64("StdVW")
@@ -290,14 +290,14 @@ func (f *FontMaker) MakeFontDescriptor(info TtfInfo) (string, error) {
 	} else {
 		stemv = 70
 	}
-	fd += fmt.Sprintf("\tme.desc[6] =  gopdf.FontDescItem{ Key:\"StemV\", Val :  \"%d\" }\n ", stemv)
+	fd += fmt.Sprintf("\tme.desc[6] =  gofpdf.FontDescItem{ Key:\"StemV\", Val :  \"%d\" }\n ", stemv)
 
 	// MissingWidth
 	missingWidth, err := info.GetInt64("MissingWidth")
 	if err != nil {
 		return "", err
 	}
-	fd += fmt.Sprintf("\tme.desc[7] =  gopdf.FontDescItem{ Key:\"MissingWidth\", Val :  \"%d\" } \n ", missingWidth)
+	fd += fmt.Sprintf("\tme.desc[7] =  gofpdf.FontDescItem{ Key:\"MissingWidth\", Val :  \"%d\" } \n ", missingWidth)
 	return fd, nil
 }
 
@@ -324,18 +324,18 @@ func (f *FontMaker) MakeFontEncoding(mappath string, fontmaps []FontMap) (string
 
 func (f *FontMaker) MakeWidthArray(widths map[int]int) (string, error) {
 
-	str := "\tme.cw = make(gopdf.FontCw)\n"
+	str := "\tme.cw = make(gofpdf.FontCw)\n"
 	for c := 0; c <= 255; c++ {
 		str += "\tme.cw["
 		chr := string(c)
 		if chr == "\"" {
-			str += "gopdf.ToByte(\"\\\"\")"
+			str += "gofpdf.ToByte(\"\\\"\")"
 		} else if chr == "\\" {
-			str += "gopdf.ToByte(\"\\\\\")"
+			str += "gofpdf.ToByte(\"\\\\\")"
 		} else if c >= 32 && c <= 126 {
-			str += "gopdf.ToByte(\"" + chr + "\")"
+			str += "gofpdf.ToByte(\"" + chr + "\")"
 		} else {
-			str += fmt.Sprintf("gopdf.Chr(%d)", c)
+			str += fmt.Sprintf("gofpdf.Chr(%d)", c)
 		}
 		str += fmt.Sprintf("]=%d\n", widths[c])
 	}

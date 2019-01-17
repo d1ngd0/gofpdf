@@ -6,7 +6,7 @@ import (
 
 	"io"
 
-	"github.com/signintech/gofpdf/fontmaker/core"
+	"github.com/jung-kurt/gofpdf/fontmaker/core"
 )
 
 //ErrCharNotFound char not found

@@ -313,9 +313,9 @@ func (gp *Fpdf) AddPageWithOption(opt PageOption) {
 	gp.resetCurrXY()
 }
 
-//Start : init gofpdf
-func (gp *Fpdf) Start(config Config) {
-
+//New creates a new Fpdf Object
+func New(config Config) *Fpdf {
+	gp := new(Fpdf)
 	gp.config = config
 	gp.init()
 	//สร้าง obj พื้นฐาน
@@ -341,6 +341,7 @@ func (gp *Fpdf) Start(config Config) {
 		gp.pdfProtection = gp.createProtection()
 	}
 
+	return gp
 }
 
 // SetFontWithStyle : set font style support Regular or Underline
