@@ -167,18 +167,6 @@ func (gp *Fpdf) SetGrayStroke(grayScale float64) {
 	gp.getContent().AppendStreamSetGrayStroke(grayScale)
 }
 
-// SetMargins defines the left, top, right and bottom margins. By default, they equal 1 cm. Call this method to change them.
-func (gp *Fpdf) SetMargins(left, top, right, bottom float64) {
-	gp.UnitsToPointsVar(&left, &top, &right, &bottom)
-	gp.margins = Margins{left, top, right, bottom}
-}
-
-// GetMargins gets the current margins, The margins will be converted back to the documents units
-func (gp *Fpdf) GetMargins() Margins {
-	gp.PointsToUnitsVar(&gp.margins.Left, &gp.margins.Top, &gp.margins.Right, &gp.margins.Bottom)
-	return gp.margins
-}
-
 //SetX : set current position X
 func (gp *Fpdf) SetX(x float64) {
 	gp.UnitsToPointsVar(&x)
@@ -187,7 +175,7 @@ func (gp *Fpdf) SetX(x float64) {
 }
 
 //GetX : get current position X
-func (gp *Fpdf) GetX() float64 {
+func (gp *Fpdf) X() float64 {
 	return gp.PointsToUnits(gp.curr.X)
 }
 
@@ -197,9 +185,19 @@ func (gp *Fpdf) SetY(y float64) {
 	gp.curr.Y = y
 }
 
-//GetY : get current position y
-func (gp *Fpdf) GetY() float64 {
+// Y : get current position y
+func (gp *Fpdf) Y() float64 {
 	return gp.PointsToUnits(gp.curr.Y)
+}
+
+// XY gets the current x and y position
+func (gp *Fpdf) XY() (float64, float64) {
+	return gp.X(), gp.Y()
+}
+
+func (gp *Fpdf) SetXY(x, y float64) {
+	gp.SetX(x)
+	gp.SetY(y)
 }
 
 //ImageByHolder : draw image by ImageHolder
@@ -494,7 +492,8 @@ func (gp *Fpdf) GetBytesPdf() []byte {
 }
 
 //Text write text start at current x,y ( current y is the baseline of text )
-func (gp *Fpdf) Text(text string) error {
+func (gp *Fpdf) Text(x, y float64, text string) error {
+	gp.SetXY(x, y)
 
 	err := gp.curr.Font_ISubset.AddChars(text)
 	if err != nil {
