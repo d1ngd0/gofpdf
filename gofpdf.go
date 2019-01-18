@@ -677,14 +677,24 @@ func (gp *Fpdf) SetTextColor(r uint8, g uint8, b uint8) {
 	gp.curr.setTextColor(rgb)
 }
 
-//SetStrokeColor set the color for the stroke
-func (gp *Fpdf) SetStrokeColor(r uint8, g uint8, b uint8) {
-	gp.getContent().AppendStreamSetColorStroke(r, g, b)
+//SetRBStrokeColor set the color for the stroke
+func (gp *Fpdf) SetRGBStrokeColor(r uint8, g uint8, b uint8) {
+	gp.getContent().AppendStreamSetRGBColorStroke(r, g, b)
 }
 
-//SetFillColor set the color for the stroke
-func (gp *Fpdf) SetFillColor(r uint8, g uint8, b uint8) {
-	gp.getContent().AppendStreamSetColorFill(r, g, b)
+//SetRGBFillColor set the color for the stroke
+func (gp *Fpdf) SetRGBFillColor(r uint8, g uint8, b uint8) {
+	gp.getContent().AppendStreamSetRGBColorFill(r, g, b)
+}
+
+//SetCMYKStrokeColor set the color for the stroke
+func (gp *Fpdf) SetCMYKStrokeColor(c, m, y, k uint8) {
+	gp.getContent().AppendStreamSetCMYKColorStroke(c, m, y, k)
+}
+
+//SetCMYKFillColor set the color for the stroke
+func (gp *Fpdf) SetCMYKFillColor(c, m, y, k uint8) {
+	gp.getContent().AppendStreamSetCMYKColorFill(c, m, y, k)
 }
 
 //MeasureTextWidth : measure Width of text (use current font)

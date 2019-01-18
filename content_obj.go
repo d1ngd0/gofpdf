@@ -243,23 +243,45 @@ func (c *ContentObj) AppendStreamSetGrayStroke(w float64) {
 	c.listCache.append(&cache)
 }
 
-//AppendStreamSetColorStroke  set the color stroke
-func (c *ContentObj) AppendStreamSetColorStroke(r uint8, g uint8, b uint8) {
+//AppendStreamSetRGBColorStroke  set the color stroke using RGB
+func (c *ContentObj) AppendStreamSetRGBColorStroke(r uint8, g uint8, b uint8) {
 	var cache cacheContentColor
-	cache.colorType = colorTypeStroke
+	cache.colorType = colorTypeStrokeRGB
 	cache.r = r
 	cache.g = g
 	cache.b = b
 	c.listCache.append(&cache)
 }
 
-//AppendStreamSetColorFill  set the color fill
-func (c *ContentObj) AppendStreamSetColorFill(r uint8, g uint8, b uint8) {
+//AppendStreamSetRGBColorFill  set the color fill using RB
+func (c *ContentObj) AppendStreamSetRGBColorFill(r uint8, g uint8, b uint8) {
 	var cache cacheContentColor
-	cache.colorType = colorTypeFill
+	cache.colorType = colorTypeFillRGB
 	cache.r = r
 	cache.g = g
 	cache.b = b
+	c.listCache.append(&cache)
+}
+
+//AppendStreamSetCMYKColorStroke  set the color stroke using CMYK
+func (c *ContentObj) AppendStreamSetCMYKColorStroke(cy uint8, m uint8, y uint8, k uint8) {
+	var cache cacheContentColor
+	cache.colorType = colorTypeStrokeCMYK
+	cache.c = cy
+	cache.m = m
+	cache.y = y
+	cache.k = k
+	c.listCache.append(&cache)
+}
+
+//AppendStreamSetCMYKColorFill  set the color fill using CMYK
+func (c *ContentObj) AppendStreamSetCMYKColorFill(cy uint8, m uint8, y uint8, k uint8) {
+	var cache cacheContentColor
+	cache.colorType = colorTypeFillCMYK
+	cache.c = cy
+	cache.m = m
+	cache.y = y
+	cache.k = k
 	c.listCache.append(&cache)
 }
 
