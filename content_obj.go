@@ -229,6 +229,85 @@ func (c *ContentObj) AppendStreamTransform(matrix TransformMatrix) {
 	c.listCache.append(&cache)
 }
 
+//AppendStreamClipBegin starts a new clip in the content
+func (c *ContentObj) AppendStreamClipBegin() {
+	var cache cacheContentClipBegin
+	c.listCache.append(&cache)
+}
+
+//AppendStreamClipEnd ends a clipping path in the content
+func (c *ContentObj) AppendStreamClipEnd() {
+	var cache cacheContentClipEnd
+	c.listCache.append(&cache)
+}
+
+//AppendStreamClipClipEllipse creates an Elliptical clipping path
+func (c *ContentObj) AppendStreamClipPolygon(points []Point, style string) {
+	var cache cacheContentClipPolygon
+	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.points = points
+	cache.style = style
+
+	c.listCache.append(new(cacheContentClipBegin))
+	c.listCache.append(&cache)
+}
+
+//AppendStreamClipClipEllipse creates an Elliptical clipping path
+func (c *ContentObj) AppendStreamClipEllipse(x, y, rx, ry float64, style string) {
+	var cache cacheContentClipEllipse
+	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.x = x
+	cache.y = y
+	cache.rx = rx
+	cache.ry = ry
+	cache.style = style
+
+	c.listCache.append(new(cacheContentClipBegin))
+	c.listCache.append(&cache)
+}
+
+//AppendStreamClipRoundedRect creates a rounded rectangle clipping path
+func (c *ContentObj) AppendStreamClipRoundedRect(x, y, w, h, r float64, style string) {
+	var cache cacheContentClipRoundedRect
+	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.x = x
+	cache.y = y
+	cache.w = w
+	cache.h = h
+	cache.r = r
+	cache.style = style
+
+	c.listCache.append(new(cacheContentClipBegin))
+	c.listCache.append(&cache)
+}
+
+//AppendStreamClipText creates a clipping path using the text
+func (c *ContentObj) AppendStreamClipText(x, y float64, txtStr string, style int) {
+	var cache cacheContentClipText
+	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.x = x
+	cache.y = y
+	cache.txtStr = txtStr
+	cache.style = style
+
+	c.listCache.append(new(cacheContentClipBegin))
+	c.listCache.append(&cache)
+}
+
+//AppendStreamClipRect starts a rectangle clipping path
+func (c *ContentObj) AppendStreamClipRect(x, y, w, h float64, style string) {
+	var cache cacheContentClipRect
+	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.x = x
+	cache.y = y
+	cache.w = w
+	cache.h = h
+	cache.style = style
+
+	c.listCache.append(new(cacheContentClipBegin))
+	c.listCache.append(&cache)
+}
+
 //AppendStreamSetLineWidth : set line width
 func (c *ContentObj) AppendStreamSetLineWidth(w float64) {
 	var cache cacheContentLineWidth

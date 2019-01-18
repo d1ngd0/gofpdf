@@ -8,6 +8,7 @@ import (
 type listCacheContent struct {
 	caches        []iCacheContent
 	transformNest int
+	clipNest      int
 }
 
 func (l *listCacheContent) last() iCacheContent {
@@ -73,6 +74,14 @@ func (l *listCacheContent) write(w io.Writer, protection *PDFProtection) error {
 			}
 		}
 
+		if _, ok := cache.(*cacheContentClipEnd); ok {
+			l.clipNest--
+
+			if l.clipNest < 0 {
+				return fmt.Errorf("error attempting to end clip operation out of sequence")
+			}
+		}
+
 		if _, ok := cache.(*cacheContentTransform); ok {
 			if l.transformNest <= 0 {
 				return fmt.Errorf("transformation context is not active")
@@ -85,6 +94,10 @@ func (l *listCacheContent) write(w io.Writer, protection *PDFProtection) error {
 
 		if _, ok := cache.(*cacheContentTransformBegin); ok {
 			l.transformNest++
+		}
+
+		if _, ok := cache.(*cacheContentClipBegin); ok {
+			l.clipNest++
 		}
 	}
 	return nil
