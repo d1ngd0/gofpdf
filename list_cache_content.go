@@ -1,9 +1,13 @@
 package gofpdf
 
-import "io"
+import (
+	"fmt"
+	"io"
+)
 
 type listCacheContent struct {
-	caches []iCacheContent
+	caches        []iCacheContent
+	transformNest int
 }
 
 func (l *listCacheContent) last() iCacheContent {
@@ -61,8 +65,26 @@ func (l *listCacheContent) appendContentText(cache cacheContentText, text string
 
 func (l *listCacheContent) write(w io.Writer, protection *PDFProtection) error {
 	for _, cache := range l.caches {
+		if _, ok := cache.(*cacheContentTransformEnd); ok {
+			l.transformNest--
+
+			if l.transformNest < 0 {
+				return fmt.Errorf("error attempting to end transformation operation out of sequence")
+			}
+		}
+
+		if _, ok := cache.(*cacheContentTransform); ok {
+			if l.transformNest <= 0 {
+				return fmt.Errorf("transformation context is not active")
+			}
+		}
+
 		if err := cache.write(w, protection); err != nil {
 			return err
+		}
+
+		if _, ok := cache.(*cacheContentTransformBegin); ok {
+			l.transformNest++
 		}
 	}
 	return nil

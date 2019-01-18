@@ -210,6 +210,25 @@ func (c *ContentObj) AppendStreamCurve(x0 float64, y0 float64, x1 float64, y1 fl
 	c.listCache.append(&cache)
 }
 
+// AppendStreamTransformBegin starts a transformation in the current content
+func (c *ContentObj) AppendStreamTransformBegin() {
+	var cache cacheContentTransformBegin
+	c.listCache.append(&cache)
+}
+
+// AppendStreamTransformEnd stops a transformation in the current content
+func (c *ContentObj) AppendStreamTransformEnd() {
+	var cache cacheContentTransformEnd
+	c.listCache.append(&cache)
+}
+
+// AppendStreamTransform applies the transformation matrix to the current content
+func (c *ContentObj) AppendStreamTransform(matrix TransformMatrix) {
+	var cache cacheContentTransform
+	cache.matrix = matrix
+	c.listCache.append(&cache)
+}
+
 //AppendStreamSetLineWidth : set line width
 func (c *ContentObj) AppendStreamSetLineWidth(w float64) {
 	var cache cacheContentLineWidth
