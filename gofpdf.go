@@ -104,10 +104,103 @@ func (gp *Fpdf) SetLineType(linetype string) {
 	gp.getContent().AppendStreamSetLineType(linetype)
 }
 
+// Circle draws a circle centered on point (x, y) with radius r.
+//
+// styleStr can be "F" for filled, "D" for outlined only, or "DF" or "FD" for
+// outlined and filled. An empty string will be replaced with "D". Drawing uses
+// the current draw color and line width centered on the circle's perimeter.
+// Filling uses the current fill color.
+func (gp *Fpdf) Circle(x, y, r float64, styleStr string) {
+	gp.Ellipse(x, y, r, r, 0, styleStr)
+}
+
+// Ellipse draws an ellipse centered at point (x, y). rx and ry specify its
+// horizontal and vertical radii.
+//
+// degRotate specifies the counter-clockwise angle in degrees that the ellipse
+// will be rotated.
+//
+// styleStr can be "F" for filled, "D" for outlined only, or "DF" or "FD" for
+// outlined and filled. An empty string will be replaced with "D". Drawing uses
+// the current draw color and line width centered on the ellipse's perimeter.
+// Filling uses the current fill color.
+//
+// The Circle() example demonstrates this method.
+func (gp *Fpdf) Ellipse(x, y, rx, ry, degRotate float64, styleStr string) {
+	gp.UnitsToPointsVar(&x, &y, &rx, &ry)
+	gp.getContent().AppendStreamArcTo(x, y, rx, ry, degRotate, 0, 360, styleStr, false)
+}
+
+// Arc draws an elliptical arc centered at point (x, y). rx and ry specify its
+// horizontal and vertical radii.
+//
+// degRotate specifies the angle that the arc will be rotated. degStart and
+// degEnd specify the starting and ending angle of the arc. All angles are
+// specified in degrees and measured counter-clockwise from the 3 o'clock
+// position.
+//
+// styleStr can be "F" for filled, "D" for outlined only, or "DF" or "FD" for
+// outlined and filled. An empty string will be replaced with "D". Drawing uses
+// the current draw color, line width, and cap style centered on the arc's
+// path. Filling uses the current fill color.
+//
+// The Circle() example demonstrates this method.
+func (gp *Fpdf) Arc(x, y, rx, ry, degRotate, degStart, degEnd float64, styleStr string) {
+	gp.UnitsToPointsVar(&x, &y, &rx, &ry)
+	gp.getContent().AppendStreamArcTo(x, y, rx, ry, degRotate, degStart, degEnd, styleStr, true)
+
+}
+
+// ArcTo draws an elliptical arc centered at point (x, y). rx and ry specify its
+// horizontal and vertical radii. If the start of the arc is not at
+// the current position, a connecting line will be drawn.
+//
+// degRotate specifies the angle that the arc will be rotated. degStart and
+// degEnd specify the starting and ending angle of the arc. All angles are
+// specified in degrees and measured counter-clockwise from the 3 o'clock
+// position.
+//
+// styleStr can be "F" for filled, "D" for outlined only, or "DF" or "FD" for
+// outlined and filled. An empty string will be replaced with "D". Drawing uses
+// the current draw color, line width, and cap style centered on the arc's
+// path. Filling uses the current fill color.
+//
+// The MoveTo() example demonstrates this method.
+func (gp *Fpdf) ArcTo(x, y, rx, ry, degRotate, degStart, degEnd float64) {
+	gp.UnitsToPointsVar(&x, &y, &rx, &ry)
+	gp.getContent().AppendStreamArcTo(x, y, rx, ry, degRotate, degStart, degEnd, "", true)
+}
+
 //Line : draw line
 func (gp *Fpdf) Line(x1 float64, y1 float64, x2 float64, y2 float64) {
 	gp.UnitsToPointsVar(&x1, &y1, &x2, &y2)
 	gp.getContent().AppendStreamLine(x1, y1, x2, y2)
+}
+
+// MoveTo moves the stylus to (x, y) without drawing the path from the
+// previous point. Paths must start with a MoveTo to set the original
+// stylus location or the result is undefined.
+//
+// Create a "path" by moving a virtual stylus around the page (with
+// MoveTo, LineTo, CurveTo, CurveBezierCubicTo, ArcTo & ClosePath)
+// then draw it or  fill it in (with DrawPath). The main advantage of
+// using the path drawing routines rather than multiple Fpdf.Line is
+// that PDF creates nice line joins at the angles, rather than just
+// overlaying the lines.
+func (gp *Fpdf) MoveTo(x, y float64) {
+	gp.UnitsToPointsVar(&x, &y)
+	gp.getContent().AppendStreamPoint(x, y)
+	gp.curr.X, gp.curr.Y = x, y
+}
+
+// LineTo creates a line from the current stylus location to (x, y), which
+// becomes the new stylus location. Note that this only creates the line in
+// the path; it does not actually draw the line on the page.
+//
+// The MoveTo() example demonstrates this method.
+func (gp *Fpdf) LineTo(x, y float64) {
+	gp.UnitsToPointsVar(&x, &y)
+	gp.getContent().AppendStreamLineTo(x, y)
 }
 
 //RectFromLowerLeft : draw rectangle from lower-left corner (x, y)
@@ -508,6 +601,11 @@ func (gp *Fpdf) Text(x, y float64, text string) error {
 	return nil
 }
 
+//CellWithOptionf : same as CellWithOption but using go's Sprintf format
+func (gp *Fpdf) CellWithOptionf(rectangle *Rect, text string, opt CellOption, args ...interface{}) error {
+	return gp.CellWithOption(rectangle, fmt.Sprintf(text, args...), opt)
+}
+
 //CellWithOption create cell of text ( use current x,y is upper-left corner of cell)
 func (gp *Fpdf) CellWithOption(rectangle *Rect, text string, opt CellOption) error {
 	rectangle = rectangle.UnitsToPoints(gp.config.Unit)
@@ -520,6 +618,11 @@ func (gp *Fpdf) CellWithOption(rectangle *Rect, text string, opt CellOption) err
 		return err
 	}
 	return nil
+}
+
+//Cellf : same as cell but using go's Sprintf format
+func (gp *Fpdf) Cellf(rectangle *Rect, text string, args ...interface{}) error {
+	return gp.Cell(rectangle, fmt.Sprintf(text, args...))
 }
 
 //Cell : create cell of text ( use current x,y is upper-left corner of cell)
@@ -710,6 +813,12 @@ func (gp *Fpdf) MeasureTextWidth(text string, units int) (float64, error) {
 		return 0, err
 	}
 	return PointsToUnits(units, textWidthPdfUnit), nil
+}
+
+// CurveTo : marks a curve from the x, y position to the new x, y position
+func (gp *Fpdf) CurveTo(cx0, cy0, cx1, cy1, x, y float64) {
+	gp.UnitsToPointsVar(&cx0, &cy0, &cx1, &cy1, &x, &y)
+	gp.getContent().AppendStreamCurveTo(cx0, cy0, cx1, cy1, x, y)
 }
 
 //Curve Draws a Bézier curve (the Bézier curve is tangent to the line between the control points at either end of the curve)

@@ -150,6 +150,42 @@ func (c *ContentObj) AppendStreamSubsetFont(rectangle *Rect, text string, cellOp
 	return nil
 }
 
+// AppendStreamArcTo : appends an arc to
+func (c *ContentObj) AppendStreamArcTo(x, y, rx, ry, degRotate, degStart, degEnd float64, styleStr string, path bool) {
+	var cache cacheContentArcTo
+	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.currentX = &c.getRoot().curr.X
+	cache.currentY = &c.getRoot().curr.Y
+	cache.x = x
+	cache.y = y
+	cache.rx = rx
+	cache.ry = ry
+	cache.degRotate = degRotate
+	cache.degStart = degStart
+	cache.degEnd = degEnd
+	cache.styleStr = styleStr
+	cache.path = path
+	c.listCache.append(&cache)
+}
+
+// AppendStreamPoint appends a point
+func (c *ContentObj) AppendStreamPoint(x, y float64) {
+	var cache cacheContentPoint
+	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.x = x
+	cache.y = y
+	c.listCache.append(&cache)
+}
+
+// AppendStreamLineTo appends a line to
+func (c *ContentObj) AppendStreamLineTo(x, y float64) {
+	var cache cacheContentLineTo
+	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.x = x
+	cache.y = y
+	c.listCache.append(&cache)
+}
+
 //AppendStreamLine append line
 func (c *ContentObj) AppendStreamLine(x1 float64, y1 float64, x2 float64, y2 float64) {
 	//h := c.getRoot().config.PageSize.H
@@ -183,6 +219,19 @@ func (c *ContentObj) AppendStreamOval(x1 float64, y1 float64, x2 float64, y2 flo
 	cache.y1 = y1
 	cache.x2 = x2
 	cache.y2 = y2
+	c.listCache.append(&cache)
+}
+
+// AppendStreamCurveTo : draw a curve from the current spot to the x and y position
+func (c *ContentObj) AppendStreamCurveTo(cx0, cy0, cx1, cy1, x, y float64) {
+	var cache cacheContentCurveTo
+	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.cx0 = cx0
+	cache.cy0 = cy0
+	cache.cx1 = cx1
+	cache.cy1 = cy1
+	cache.x = x
+	cache.y = y
 	c.listCache.append(&cache)
 }
 
