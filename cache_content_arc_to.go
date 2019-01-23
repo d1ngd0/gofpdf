@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"strings"
 )
 
 type cacheContentArcTo struct {
@@ -80,7 +79,8 @@ func (c *cacheContentArcTo) write(w io.Writer, protection *PDFProtection) error 
 	}
 
 	if !c.path {
-		fmt.Fprintf(w, fillDrawOp(c.styleStr))
+		drawPath := cacheContentDrawPath{c.styleStr}
+		drawPath.write(w, protection)
 	}
 
 	if c.degRotate != 0 {
@@ -88,28 +88,4 @@ func (c *cacheContentArcTo) write(w io.Writer, protection *PDFProtection) error 
 	}
 
 	return nil
-}
-
-// fillDrawOp corrects path painting operators
-func fillDrawOp(styleStr string) (opStr string) {
-	switch strings.ToUpper(styleStr) {
-	case "", "D":
-		// Stroke the path.
-		opStr = "S"
-	case "F":
-		// fill the path, using the nonzero winding number rule
-		opStr = "f"
-	case "F*":
-		// fill the path, using the even-odd rule
-		opStr = "f*"
-	case "FD", "DF":
-		// fill and then stroke the path, using the nonzero winding number rule
-		opStr = "B"
-	case "FD*", "DF*":
-		// fill and then stroke the path, using the even-odd rule
-		opStr = "B*"
-	default:
-		opStr = styleStr
-	}
-	return
 }

@@ -104,6 +104,62 @@ func (gp *Fpdf) SetLineType(linetype string) {
 	gp.getContent().AppendStreamSetLineType(linetype)
 }
 
+// Beziergon draws a closed figure defined by a series of cubic Bézier curve
+// segments. The first point in the slice defines the starting point of the
+// figure. Each three following points p1, p2, p3 represent a curve segment to
+// the point p3 using p1 and p2 as the Bézier control points.
+//
+// The x and y fields of the points use the units established in New().
+//
+// styleStr can be "F" for filled, "D" for outlined only, or "DF" or "FD" for
+// outlined and filled. An empty string will be replaced with "D". Drawing uses
+// the current draw color and line width centered on the ellipse's perimeter.
+// Filling uses the current fill color.
+func (gp *Fpdf) Beziergon(pts Points, styleStr string) error {
+	// Thanks, Robert Lillack, for contributing this function.
+	points := pts.ToPoints(gp.config.Unit)
+
+	if len(points) < 4 {
+		return fmt.Errorf("the number of points can not be less than 4. %d found", len(points))
+	}
+
+	gp.getContent().AppendStreamPoint(points[0].XY())
+
+	points = points[1:]
+	for len(points) >= 3 {
+		cx0, cy0 := points[0].XY()
+		cx1, cy1 := points[1].XY()
+		x1, y1 := points[2].XY()
+		gp.getContent().AppendStreamCurveTo(cx0, cy0, cx1, cy1, x1, y1)
+		points = points[3:]
+	}
+
+	gp.getContent().AppendStreamDrawPath(styleStr)
+	return nil
+}
+
+// DrawPath actually draws the path on the page.
+//
+// styleStr can be "F" for filled, "D" for outlined only, or "DF" or "FD" for
+// outlined and filled. An empty string will be replaced with "D".
+// Path-painting operators as defined in the PDF specification are also
+// allowed: "S" (Stroke the path), "s" (Close and stroke the path),
+// "f" (fill the path, using the nonzero winding number), "f*"
+// (Fill the path, using the even-odd rule), "B" (Fill and then stroke
+// the path, using the nonzero winding number rule), "B*" (Fill and
+// then stroke the path, using the even-odd rule), "b" (Close, fill,
+// and then stroke the path, using the nonzero winding number rule) and
+// "b*" (Close, fill, and then stroke the path, using the even-odd
+// rule).
+// Drawing uses the current draw color, line width, and cap style
+// centered on the
+// path. Filling uses the current fill color.
+//
+// The MoveTo() example demonstrates this method.
+func (gp *Fpdf) DrawPath(styleStr string) {
+	gp.getContent().AppendStreamDrawPath(styleStr)
+}
+
 // Circle draws a circle centered on point (x, y) with radius r.
 //
 // styleStr can be "F" for filled, "D" for outlined only, or "DF" or "FD" for

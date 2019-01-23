@@ -151,6 +151,13 @@ func (c *ContentObj) AppendStreamSubsetFont(rectangle *Rect, text string, cellOp
 }
 
 // AppendStreamArcTo : appends an arc to
+func (c *ContentObj) AppendStreamDrawPath(styleStr string) {
+	var cache cacheContentDrawPath
+	cache.styleStr = styleStr
+	c.listCache.append(&cache)
+}
+
+// AppendStreamArcTo : appends an arc to
 func (c *ContentObj) AppendStreamArcTo(x, y, rx, ry, degRotate, degStart, degEnd float64, styleStr string, path bool) {
 	var cache cacheContentArcTo
 	cache.pageHeight = c.getRoot().curr.pageSize.H

@@ -112,12 +112,6 @@ func (gp *Fpdf) ClipPolygon(points []Point, outline bool) {
 	gp.getContent().AppendStreamClipPolygon(points, style)
 }
 
-// Point fields X and Y specify the horizontal and vertical coordinates of
-// a point, typically used in drawing.
-type Point struct {
-	X, Y float64
-}
-
 // ClipEnd ends a clipping operation that was started with a call to
 // ClipRect(), ClipRoundedRect(), ClipText(), ClipEllipse(), ClipCircle() or
 // ClipPolygon(). Clipping operations can be nested. The document cannot be
