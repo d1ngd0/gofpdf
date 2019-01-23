@@ -130,12 +130,69 @@ func (gp *Fpdf) Beziergon(pts Points, styleStr string) error {
 		cx0, cy0 := points[0].XY()
 		cx1, cy1 := points[1].XY()
 		x1, y1 := points[2].XY()
-		gp.getContent().AppendStreamCurveTo(cx0, cy0, cx1, cy1, x1, y1)
+		gp.getContent().AppendStreamCurveBezierCubic(cx0, cy0, cx1, cy1, x1, y1)
 		points = points[3:]
 	}
 
 	gp.getContent().AppendStreamDrawPath(styleStr)
 	return nil
+}
+
+// CurveBezierCubic draws a single-segment cubic Bézier curve. The curve starts at
+// the point (x0, y0) and ends at the point (x1, y1). The control points (cx0,
+// cy0) and (cx1, cy1) specify the curvature. At the start point, the curve is
+// tangent to the straight line between the start point and the control point
+// (cx0, cy0). At the end point, the curve is tangent to the straight line
+// between the end point and the control point (cx1, cy1).
+//
+// styleStr can be "F" for filled, "D" for outlined only, or "DF" or "FD" for
+// outlined and filled. An empty string will be replaced with "D". Drawing uses
+// the current draw color, line width, and cap style centered on the curve's
+// path. Filling uses the current fill color.
+//
+// This routine performs the same function as CurveCubic() but uses standard
+// argument order.
+//
+// The Circle() example demonstrates this method.
+func (gp *Fpdf) CurveBezierCubic(x0, y0, cx0, cy0, cx1, cy1, x1, y1 float64, styleStr string) {
+	gp.UnitsToPointsVar(&x0, &y0, &cx0, &cy0, &cx1, &cy1, &x1, &y1)
+	gp.getContent().AppendStreamPoint(x0, y0)
+	gp.getContent().AppendStreamCurveBezierCubic(cx0, cy0, cx1, cy1, x1, y1)
+	gp.getContent().AppendStreamDrawPath(styleStr)
+}
+
+// CurveCubic draws a single-segment cubic Bézier curve. This routine performs
+// the same function as CurveBezierCubic() but has a nonstandard argument order.
+// It is retained to preserve backward compatibility.
+func (gp *Fpdf) CurveCubic(x0, y0, cx0, cy0, x1, y1, cx1, cy1 float64, styleStr string) {
+	// f.point(x0, y0)
+	// f.outf("%.5f %.5f %.5f %.5f %.5f %.5f c %s", cx0*f.k, (f.h-cy0)*f.k,
+	// cx1*f.k, (f.h-cy1)*f.k, x1*f.k, (f.h-y1)*f.k, fillDrawOp(styleStr))
+	gp.CurveBezierCubic(x0, y0, cx0, cy0, cx1, cy1, x1, y1, styleStr)
+}
+
+// CurveBezierCubicTo creates a single-segment cubic Bézier curve. The curve
+// starts at the current stylus location and ends at the point (x, y). The
+// control points (cx0, cy0) and (cx1, cy1) specify the curvature. At the
+// current stylus, the curve is tangent to the straight line between the
+// current stylus location and the control point (cx0, cy0). At the end point,
+// the curve is tangent to the straight line between the end point and the
+// control point (cx1, cy1).
+//
+// The MoveTo() example demonstrates this method.
+func (gp *Fpdf) CurveBezierCubicTo(cx0, cy0, cx1, cy1, x, y float64) {
+	gp.UnitsToPointsVar(&cx0, &cy0, &cx1, &cy1, &x, &y)
+	gp.getContent().AppendStreamCurveBezierCubic(cx0, cy0, cx1, cy1, x, y)
+	gp.curr.X, gp.curr.Y = x, y
+}
+
+// ClosePath creates a line from the current location to the last MoveTo point
+// (if not the same) and mark the path as closed so the first and last lines
+// join nicely.
+//
+// The MoveTo() example demonstrates this method.
+func (gp *Fpdf) ClosePath() {
+	gp.getContent().AppendStreamClosePath()
 }
 
 // DrawPath actually draws the path on the page.
@@ -872,21 +929,29 @@ func (gp *Fpdf) MeasureTextWidth(text string, units int) (float64, error) {
 }
 
 // CurveTo : marks a curve from the x, y position to the new x, y position
-func (gp *Fpdf) CurveTo(cx0, cy0, cx1, cy1, x, y float64) {
-	gp.UnitsToPointsVar(&cx0, &cy0, &cx1, &cy1, &x, &y)
-	gp.getContent().AppendStreamCurveTo(cx0, cy0, cx1, cy1, x, y)
+func (gp *Fpdf) CurveTo(cx, cy, x, y float64) {
+	gp.UnitsToPointsVar(&cx, &cy, &x, &y)
+	gp.getContent().AppendStreamCurve(cx, cy, x, y)
 }
 
-//Curve Draws a Bézier curve (the Bézier curve is tangent to the line between the control points at either end of the curve)
-// Parameters:
-// - x0, y0: Start point
-// - x1, y1: Control point 1
-// - x2, y2: Control point 2
-// - x3, y3: End point
-// - style: Style of rectangule (draw and/or fill: D, F, DF, FD)
-func (gp *Fpdf) Curve(x0 float64, y0 float64, x1 float64, y1 float64, x2 float64, y2 float64, x3 float64, y3 float64, style string) {
-	gp.UnitsToPointsVar(&x0, &y0, &x1, &y1, &x2, &y2, &x3, &y3)
-	gp.getContent().AppendStreamCurve(x0, y0, x1, y1, x2, y2, x3, y3, style)
+// Curve draws a single-segment quadratic Bézier curve. The curve starts at
+// the point (x0, y0) and ends at the point (x1, y1). The control point (cx,
+// cy) specifies the curvature. At the start point, the curve is tangent to the
+// straight line between the start point and the control point. At the end
+// point, the curve is tangent to the straight line between the end point and
+// the control point.
+//
+// styleStr can be "F" for filled, "D" for outlined only, or "DF" or "FD" for
+// outlined and filled. An empty string will be replaced with "D". Drawing uses
+// the current draw color, line width, and cap style centered on the curve's
+// path. Filling uses the current fill color.
+//
+// The Circle() example demonstrates this method.
+func (gp *Fpdf) Curve(x0, y0, cx, cy, x1, y1 float64, styleStr string) {
+	gp.UnitsToPointsVar(&x0, &y0, &cx, &cy, &x1, &y1)
+	gp.getContent().AppendStreamPoint(x0, y0)
+	gp.getContent().AppendStreamCurve(cx, cy, x1, y1)
+	gp.getContent().AppendStreamDrawPath(styleStr)
 }
 
 /*

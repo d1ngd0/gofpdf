@@ -4,7 +4,6 @@ import (
 	"compress/zlib"
 	"fmt"
 	"io"
-	"strings"
 )
 
 //ContentObj content object
@@ -150,7 +149,24 @@ func (c *ContentObj) AppendStreamSubsetFont(rectangle *Rect, text string, cellOp
 	return nil
 }
 
-// AppendStreamArcTo : appends an arc to
+// AppendStreamClosePath : appends a path closing
+func (c *ContentObj) AppendStreamClosePath() {
+	var cache cacheContentClosePath
+	c.listCache.append(&cache)
+}
+
+// AppendStreamCurve : appends a curve
+func (c *ContentObj) AppendStreamCurve(cx, cy, x, y float64) {
+	var cache cacheContentCurve
+	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.x = x
+	cache.y = y
+	cache.cx = cx
+	cache.cy = cy
+	c.listCache.append(&cache)
+}
+
+// AppendStreamDrawPath : appends a draw path with style string
 func (c *ContentObj) AppendStreamDrawPath(styleStr string) {
 	var cache cacheContentDrawPath
 	cache.styleStr = styleStr
@@ -229,9 +245,9 @@ func (c *ContentObj) AppendStreamOval(x1 float64, y1 float64, x2 float64, y2 flo
 	c.listCache.append(&cache)
 }
 
-// AppendStreamCurveTo : draw a curve from the current spot to the x and y position
-func (c *ContentObj) AppendStreamCurveTo(cx0, cy0, cx1, cy1, x, y float64) {
-	var cache cacheContentCurveTo
+// AppendStreamCurveBezierCubic : draw a curve from the current spot to the x and y position
+func (c *ContentObj) AppendStreamCurveBezierCubic(cx0, cy0, cx1, cy1, x, y float64) {
+	var cache cacheContentCurveBezierCubic
 	cache.pageHeight = c.getRoot().curr.pageSize.H
 	cache.cx0 = cx0
 	cache.cy0 = cy0
@@ -239,30 +255,6 @@ func (c *ContentObj) AppendStreamCurveTo(cx0, cy0, cx1, cy1, x, y float64) {
 	cache.cy1 = cy1
 	cache.x = x
 	cache.y = y
-	c.listCache.append(&cache)
-}
-
-//AppendStreamCurve draw curve
-// - x0, y0: Start point
-// - x1, y1: Control point 1
-// - x2, y2: Control point 2
-// - x3, y3: End point
-// - style: Style of rectangule (draw and/or fill: D, F, DF, FD)
-//		D or empty string: draw. This is the default value.
-//		F: fill
-//		DF or FD: draw and fill
-func (c *ContentObj) AppendStreamCurve(x0 float64, y0 float64, x1 float64, y1 float64, x2 float64, y2 float64, x3 float64, y3 float64, style string) {
-	var cache cacheContentCurve
-	cache.pageHeight = c.getRoot().curr.pageSize.H
-	cache.x0 = x0
-	cache.y0 = y0
-	cache.x1 = x1
-	cache.y1 = y1
-	cache.x2 = x2
-	cache.y2 = y2
-	cache.x3 = x3
-	cache.y3 = y3
-	cache.style = strings.ToUpper(strings.TrimSpace(style))
 	c.listCache.append(&cache)
 }
 
