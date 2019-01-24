@@ -58,7 +58,7 @@ func (c *cacheContentArcTo) write(w io.Writer, protection *PDFProtection) error 
 		b1 := y + c.ry*math.Sin(t)
 		c1 := -c.rx * math.Sin(t)
 		d1 := c.ry * math.Cos(t)
-		curveTo := &cacheContentCurveTo{
+		curveTo := &cacheContentCurveBezierCubic{
 			c.pageHeight,
 			a0 + (c0 * dtm),
 			c.pageHeight - (b0 + (d0 * dtm)),

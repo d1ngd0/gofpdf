@@ -9,7 +9,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -714,14 +716,103 @@ func (gp *Fpdf) Text(x, y float64, text string) error {
 	return nil
 }
 
-//CellWithOptionf : same as CellWithOption but using go's Sprintf format
-func (gp *Fpdf) CellWithOptionf(rectangle *Rect, text string, opt CellOption, args ...interface{}) error {
-	return gp.CellWithOption(rectangle, fmt.Sprintf(text, args...), opt)
+func (gp *Fpdf) MultiCell(w, h float64, txtStr string) error {
+	gp.UnitsToPointsVar(&w, &h)
+
+	if w == 0 {
+		w = gp.rightMarginWidth(gp.curr.X)
+	}
+
+	lines, err := gp.splitLines(txtStr, w)
+	if err != nil {
+		return err
+	}
+
+	rectangle := &Rect{W: w, H: h}
+
+	defaultopt := CellOption{
+		Align:  Left | Top,
+		Border: 0,
+		Float:  Bottom,
+	}
+
+	err = gp.curr.Font_ISubset.AddChars(txtStr)
+	if err != nil {
+		return err
+	}
+
+	for x := 0; x < len(lines); x++ {
+		err = gp.getContent().AppendStreamSubsetFont(rectangle, lines[x], defaultopt)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (gp *Fpdf) rightMarginWidth(leftOffset float64) float64 {
+	return gp.curr.pageSize.W - gp.margins.Right - leftOffset
+}
+
+func (gp *Fpdf) splitLines(txt string, w float64) ([]string, error) {
+	var final []string
+	nlb := strings.Split(txt, "\n")
+
+	for x := 0; x < len(nlb); x++ {
+		buffer := nlb[x]
+
+		for {
+			var line string
+			var err error
+
+			line, buffer, err = gp.cutStringBefore(buffer, w)
+			if err != nil {
+				return final, err
+			}
+
+			final = append(final, line)
+			if buffer == "" {
+				break
+			}
+		}
+	}
+
+	return final, nil
+}
+
+func (gp *Fpdf) cutStringBefore(txtStr string, w float64) (line string, left string, err error) {
+	r := regexp.MustCompile("[^\\s]*\\s*")
+	words := r.FindAllString(txtStr, -1)
+
+	for y := 0; y < len(words); y++ {
+		var tw float64
+		tw, err = gp.MeasureTextWidth(fmt.Sprintf("%s%s", line, words[y]), Unit_PT)
+
+		if err != nil {
+			return
+		}
+
+		if tw > w {
+			if line == "" && left != "" {
+				err = fmt.Errorf("width not large enough to fit anything")
+				return
+			}
+
+			left = strings.Join(words[y:], "")
+			break
+		}
+
+		line = fmt.Sprintf("%s%s", line, words[y])
+	}
+
+	return
 }
 
 //CellWithOption create cell of text ( use current x,y is upper-left corner of cell)
-func (gp *Fpdf) CellWithOption(rectangle *Rect, text string, opt CellOption) error {
-	rectangle = rectangle.UnitsToPoints(gp.config.Unit)
+func (gp *Fpdf) CellWithOption(w, h float64, text string, opt CellOption) error {
+	gp.UnitsToPointsVar(&w, &h)
+	rectangle := &Rect{W: w, H: h}
 	err := gp.curr.Font_ISubset.AddChars(text)
 	if err != nil {
 		return err
@@ -734,14 +825,15 @@ func (gp *Fpdf) CellWithOption(rectangle *Rect, text string, opt CellOption) err
 }
 
 //Cellf : same as cell but using go's Sprintf format
-func (gp *Fpdf) Cellf(rectangle *Rect, text string, args ...interface{}) error {
-	return gp.Cell(rectangle, fmt.Sprintf(text, args...))
+func (gp *Fpdf) Cellf(w, h float64, text string, args ...interface{}) error {
+	return gp.Cell(w, h, fmt.Sprintf(text, args...))
 }
 
 //Cell : create cell of text ( use current x,y is upper-left corner of cell)
 //Note that this has no effect on Rect.H pdf (now). Fix later :-)
-func (gp *Fpdf) Cell(rectangle *Rect, text string) error {
-	rectangle = rectangle.UnitsToPoints(gp.config.Unit)
+func (gp *Fpdf) Cell(w, h float64, text string) error {
+	gp.UnitsToPointsVar(&w, &h)
+	rectangle := &Rect{W: w, H: h}
 
 	defaultopt := CellOption{
 		Align:  Left | Top,
@@ -753,6 +845,7 @@ func (gp *Fpdf) Cell(rectangle *Rect, text string) error {
 	if err != nil {
 		return err
 	}
+
 	err = gp.getContent().AppendStreamSubsetFont(rectangle, text, defaultopt)
 	if err != nil {
 		return err
