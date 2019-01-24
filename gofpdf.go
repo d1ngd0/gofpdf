@@ -382,7 +382,7 @@ func (gp *Fpdf) SetX(x float64) {
 	gp.curr.X = x
 }
 
-//GetX : get current position X
+//X : get current position X
 func (gp *Fpdf) X() float64 {
 	return gp.PointsToUnits(gp.curr.X)
 }
@@ -403,6 +403,7 @@ func (gp *Fpdf) XY() (float64, float64) {
 	return gp.X(), gp.Y()
 }
 
+// SetXY sets both x and y
 func (gp *Fpdf) SetXY(x, y float64) {
 	gp.SetX(x)
 	gp.SetY(y)
@@ -520,7 +521,10 @@ func (gp *Fpdf) AddPage() {
 //AddPageWithOption  : add new page with option
 func (gp *Fpdf) AddPageWithOption(opt PageOption) {
 	opt.PageSize = opt.PageSize.UnitsToPoints(gp.config.Unit)
+	gp.addPageWithOption(opt)
+}
 
+func (gp *Fpdf) addPageWithOption(opt PageOption) {
 	page := new(PageObj)
 	page.init(func() *Fpdf {
 		return gp
@@ -632,6 +636,7 @@ func (gp *Fpdf) Read(p []byte) (int, error) {
 	return gp.buf.Read(p)
 }
 
+// Close closes the pdf buffer
 func (gp *Fpdf) Close() error {
 	gp.buf = bytes.Buffer{}
 	return nil
@@ -716,7 +721,69 @@ func (gp *Fpdf) Text(x, y float64, text string) error {
 	return nil
 }
 
+// WriteText prints text from the current position. When the right margin is
+// reached (or the \n character is met) a line break occurs and text continues
+// from the left margin. Upon method exit, the current position is left just at
+// the end of the text.
+//
+// It is possible to put a link on the text.
+//
+// h indicates the line height in the unit of measure specified in New().
+func (gp *Fpdf) WriteText(h float64, txtStr string) error {
+	return gp.MultiCell(0, h, txtStr)
+}
+
+// WriteText prints text from the current position. When the right margin is
+// reached (or the \n character is met) a line break occurs and text continues
+// from the left margin. Upon method exit, the current position is left just at
+// the end of the text.
+//
+// It is possible to put a link on the text.
+//
+// h indicates the line height in the unit of measure specified in New().
+func (gp *Fpdf) WriteTextOpts(h float64, txtStr string, opts CellOption) error {
+	return gp.MultiCellOpts(0, h, txtStr, opts)
+}
+
+// MultiCell supports printing text with line breaks. They can be automatic (as
+// soon as the text reaches the right border of the cell) or explicit (via the
+// \n character). As many cells as necessary are output, one below the other.
+//
+// Text can be aligned, centered or justified. The cell block can be framed and
+// the background painted. See CellFormat() for more details.
+//
+// The current position after calling MultiCell() is the beginning of the next
+// line, equivalent to calling CellFormat with ln equal to 1.
+//
+// w is the width of the cells. A value of zero indicates cells that reach to
+// the right margin.
+//
+// h indicates the line height of each cell in the unit of measure specified in New().
 func (gp *Fpdf) MultiCell(w, h float64, txtStr string) error {
+	defaultopt := CellOption{
+		Align:  Left | Top,
+		Border: 0,
+		Float:  Bottom,
+	}
+
+	return gp.MultiCellOpts(w, h, txtStr, defaultopt)
+}
+
+// MultiCell supports printing text with line breaks. They can be automatic (as
+// soon as the text reaches the right border of the cell) or explicit (via the
+// \n character). As many cells as necessary are output, one below the other.
+//
+// Text can be aligned, centered or justified. The cell block can be framed and
+// the background painted. See CellFormat() for more details.
+//
+// The current position after calling MultiCell() is the beginning of the next
+// line, equivalent to calling CellFormat with ln equal to 1.
+//
+// w is the width of the cells. A value of zero indicates cells that reach to
+// the right margin.
+//
+// h indicates the line height of each cell in the unit of measure specified in New().
+func (gp *Fpdf) MultiCellOpts(w, h float64, txtStr string, opts CellOption) error {
 	gp.UnitsToPointsVar(&w, &h)
 
 	if w == 0 {
@@ -730,19 +797,18 @@ func (gp *Fpdf) MultiCell(w, h float64, txtStr string) error {
 
 	rectangle := &Rect{W: w, H: h}
 
-	defaultopt := CellOption{
-		Align:  Left | Top,
-		Border: 0,
-		Float:  Bottom,
-	}
-
-	err = gp.curr.Font_ISubset.AddChars(txtStr)
-	if err != nil {
-		return err
-	}
-
 	for x := 0; x < len(lines); x++ {
-		err = gp.getContent().AppendStreamSubsetFont(rectangle, lines[x], defaultopt)
+		if gp.curr.Y+h > gp.bottomMarginHeight() {
+			page := gp.pdfObjs[gp.curr.IndexOfPageObj].(*PageObj)
+			gp.addPageWithOption(page.pageOption)
+		}
+
+		err = gp.curr.Font_ISubset.AddChars(lines[x])
+		if err != nil {
+			return err
+		}
+
+		err = gp.getContent().AppendStreamSubsetFont(rectangle, lines[x], opts)
 		if err != nil {
 			return err
 		}
@@ -753,6 +819,10 @@ func (gp *Fpdf) MultiCell(w, h float64, txtStr string) error {
 
 func (gp *Fpdf) rightMarginWidth(leftOffset float64) float64 {
 	return gp.curr.pageSize.W - gp.margins.Right - leftOffset
+}
+
+func (gp *Fpdf) bottomMarginHeight() float64 {
+	return gp.curr.pageSize.H - gp.margins.Bottom
 }
 
 func (gp *Fpdf) splitLines(txt string, w float64) ([]string, error) {
