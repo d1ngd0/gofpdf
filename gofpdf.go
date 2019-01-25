@@ -829,12 +829,8 @@ func (gp *Fpdf) MultiCellOpts(w, h float64, txtStr string, opts CellOption) erro
 			gp.addPageWithOption(page.pageOption)
 		}
 
-		err = gp.curr.Font_ISubset.AddChars(lines[x])
-		if err != nil {
-			return err
-		}
+		err = gp.cellWithOption(rectangle, lines[x], opts)
 
-		err = gp.getContent().AppendStreamSubsetFont(rectangle, lines[x], opts)
 		if err != nil {
 			return err
 		}
@@ -909,15 +905,18 @@ func (gp *Fpdf) cutStringBefore(txtStr string, w float64) (line string, left str
 func (gp *Fpdf) CellWithOption(w, h float64, text string, opt CellOption) error {
 	gp.UnitsToPointsVar(&w, &h)
 	rectangle := &Rect{W: w, H: h}
+
+	return gp.cellWithOption(rectangle, text, opt)
+}
+
+func (gp *Fpdf) cellWithOption(rect *Rect, text string, opt CellOption) error {
 	err := gp.curr.Font_ISubset.AddChars(text)
 	if err != nil {
 		return err
 	}
-	err = gp.getContent().AppendStreamSubsetFont(rectangle, text, opt)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	err = gp.getContent().AppendStreamSubsetFont(rect, text, opt)
+	return err
 }
 
 //Cellf : same as cell but using go's Sprintf format
@@ -937,17 +936,7 @@ func (gp *Fpdf) Cell(w, h float64, text string) error {
 		Float:  Right,
 	}
 
-	err := gp.curr.Font_ISubset.AddChars(text)
-	if err != nil {
-		return err
-	}
-
-	err = gp.getContent().AppendStreamSubsetFont(rectangle, text, defaultopt)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return gp.cellWithOption(rectangle, text, defaultopt)
 }
 
 //AddLink
