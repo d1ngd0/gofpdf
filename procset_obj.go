@@ -18,7 +18,6 @@ func (pr *ProcSetObj) init(funcGetRoot func() *Fpdf) {
 }
 
 func (pr *ProcSetObj) write(w io.Writer, objID int) error {
-
 	io.WriteString(w, "<<\n")
 	io.WriteString(w, "/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]\n")
 	io.WriteString(w, "/Font <<\n")
@@ -37,7 +36,7 @@ func (pr *ProcSetObj) write(w io.Writer, objID int) error {
 	i = 0
 	max = len(pr.RealteXobjs)
 	for i < max {
-		fmt.Fprintf(w, "/I%d %d 0 R\n", pr.getRoot().curr.CountOfL+1, pr.RealteXobjs[i].IndexOfObj+1)
+		fmt.Fprintf(w, "/%s %d 0 R\n", pr.RealteXobjs[i].IdOfObj, pr.RealteXobjs[i].IndexOfObj+1)
 		pr.getRoot().curr.CountOfL++
 		i++
 	}
@@ -69,7 +68,7 @@ func (re *RelateFonts) IsContainsFamilyAndStyle(family string, style int) bool {
 	i := 0
 	max := len(*re)
 	for i < max {
-		if (*re)[i].Family == family && (*re)[i].Style == style  {
+		if (*re)[i].Family == family && (*re)[i].Style == style {
 			return true
 		}
 		i++
@@ -90,4 +89,6 @@ type RealteXobjects []RealteXobject
 
 type RealteXobject struct {
 	IndexOfObj int
+	// should start with I when image
+	IdOfObj string
 }

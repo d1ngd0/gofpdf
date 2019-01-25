@@ -432,7 +432,7 @@ func (c *ContentObj) AppendStreamSetCMYKColorFill(cy uint8, m uint8, y uint8, k 
 }
 
 //AppendStreamImage append image
-func (c *ContentObj) AppendStreamImage(index int, x float64, y float64, rect *Rect) {
+func (c *ContentObj) AppendStreamImage(id string, x float64, y float64, rect *Rect) {
 	//fmt.Printf("index = %d",index)
 	h := c.getRoot().curr.pageSize.H
 	var cache cacheContentImage
@@ -440,7 +440,7 @@ func (c *ContentObj) AppendStreamImage(index int, x float64, y float64, rect *Re
 	cache.x = x
 	cache.y = y
 	cache.rect = *rect
-	cache.index = index
+	cache.id = id
 	c.listCache.append(&cache)
 	//c.stream.WriteString(fmt.Sprintf("q %0.2f 0 0 %0.2f %0.2f %0.2f cm /I%d Do Q\n", rect.W, rect.H, x, h-(y+rect.H), index+1))
 }

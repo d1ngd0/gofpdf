@@ -2,6 +2,7 @@ package gofpdf
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"fmt"
 	"image"
 	_ "image/jpeg"
@@ -175,4 +176,9 @@ func (i *ImageObj) parse() error {
 //Parse parse img
 func (i *ImageObj) Parse() error {
 	return i.parse()
+}
+
+// hash returns the hash of the image object
+func (i *ImageObj) hash() string {
+	return fmt.Sprintf("%x", sha1.Sum(i.imginfo.data))
 }

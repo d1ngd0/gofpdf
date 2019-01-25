@@ -24,7 +24,7 @@ type Current struct {
 	//img
 	CountOfImg int
 	//cache of image in pdf file
-	ImgCaches []ImageCache
+	ImgCaches map[string]ImageCache
 
 	//text color
 	txtColor Rgb
@@ -49,9 +49,9 @@ func (c *Current) textColor() Rgb {
 }
 
 type ImageCache struct {
-	Path  string //ID or Path
-	Index int
-	Rect  *Rect
+	Path string //ID or Path
+	Id   string
+	Rect *Rect
 }
 
 //Rgb  rgb color

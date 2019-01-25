@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 )
 
 //ImageHolder hold image data
@@ -74,6 +75,17 @@ func newImageBuffByReader(r io.Reader) (*imageBuff, error) {
 	i.id = fmt.Sprintf("%x", h.Sum(nil))
 	i.Write(b)
 	return &i, nil
+}
+
+func newImageBuffByURL(url string) (*imageBuff, error) {
+	resp, err := http.Get(url)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	return newImageBuffByReader(resp.Body)
 }
 
 func (i *imageBuff) ID() string {

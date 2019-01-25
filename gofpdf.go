@@ -418,15 +418,15 @@ func (gp *Fpdf) ImageByHolder(img ImageHolder, x float64, y float64, rect *Rect)
 }
 
 func (gp *Fpdf) imageByHolder(img ImageHolder, x float64, y float64, rect *Rect) error {
-	cacheImageIndex := -1
-	for _, imgcache := range gp.curr.ImgCaches {
+	cacheImageIndex := ""
+	for id, imgcache := range gp.curr.ImgCaches {
 		if img.ID() == imgcache.Path {
-			cacheImageIndex = imgcache.Index
+			cacheImageIndex = id
 			break
 		}
 	}
 
-	if cacheImageIndex == -1 { //new image
+	if cacheImageIndex == "" { //new image
 
 		//create img object
 		imgobj := new(ImageObj)
@@ -455,18 +455,18 @@ func (gp *Fpdf) imageByHolder(img ImageHolder, x float64, y float64, rect *Rect)
 			return err
 		}
 		index := gp.addObj(imgobj)
+		id := fmt.Sprintf("I%s", imgobj.hash())
 		if gp.indexOfProcSet != -1 {
 			//ยัดรูป
 			procset := gp.pdfObjs[gp.indexOfProcSet].(*ProcSetObj)
-			gp.getContent().AppendStreamImage(gp.curr.CountOfImg, x, y, imgRect)
-			procset.RealteXobjs = append(procset.RealteXobjs, RealteXobject{IndexOfObj: index})
+			gp.getContent().AppendStreamImage(id, x, y, imgRect)
+			procset.RealteXobjs = append(procset.RealteXobjs, RealteXobject{IndexOfObj: index, IdOfObj: id})
 			//เก็บข้อมูลรูปเอาไว้
 			var imgcache ImageCache
-			imgcache.Index = gp.curr.CountOfImg
+			imgcache.Id = id
 			imgcache.Path = img.ID()
 			imgcache.Rect = imgRect
-			gp.curr.ImgCaches = append(gp.curr.ImgCaches, imgcache)
-			gp.curr.CountOfImg++
+			gp.curr.ImgCaches[id] = imgcache
 		}
 
 		if imgobj.haveSMask() {
@@ -509,6 +509,32 @@ func (gp *Fpdf) Image(picPath string, x float64, y float64, rect *Rect) error {
 	if err != nil {
 		return err
 	}
+	return gp.imageByHolder(imgh, x, y, rect)
+}
+
+// ImageByReader adds an image to the pdf with a reader
+func (gp *Fpdf) ImageByReader(r io.Reader, x float64, y float64, rect *Rect) error {
+	gp.UnitsToPointsVar(&x, &y)
+	rect = rect.UnitsToPoints(gp.config.Unit)
+
+	imgh, err := newImageBuffByReader(r)
+	if err != nil {
+		return err
+	}
+
+	return gp.imageByHolder(imgh, x, y, rect)
+}
+
+// ImageByURL adds an image to the pdf using the given url
+func (gp *Fpdf) ImageByURL(url string, x float64, y float64, rect *Rect) error {
+	gp.UnitsToPointsVar(&x, &y)
+	rect = rect.UnitsToPoints(gp.config.Unit)
+
+	imgh, err := newImageBuffByURL(url)
+	if err != nil {
+		return err
+	}
+
 	return gp.imageByHolder(imgh, x, y, rect)
 }
 
@@ -1161,7 +1187,7 @@ func (gp *Fpdf) init() {
 	gp.curr.CountOfFont = 0
 	gp.curr.CountOfL = 0
 	gp.curr.CountOfImg = 0 //img
-	gp.curr.ImgCaches = *new([]ImageCache)
+	gp.curr.ImgCaches = make(map[string]ImageCache)
 	gp.anchors = make(map[string]anchorOption)
 
 	//init index
