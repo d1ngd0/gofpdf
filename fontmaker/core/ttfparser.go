@@ -4,6 +4,7 @@ import (
 	//"encoding/binary"
 	//"encoding/hex"
 	"bytes"
+	"crypto/sha1"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -1044,4 +1045,9 @@ func (t *TTFParser) Read(fd *bytes.Reader, length int) ([]byte, error) {
 	}
 	//fmt.Printf("%d,%s\n", readlength, string(buff))
 	return buff, nil
+}
+
+// Hash gets a hash representation of the font
+func (t *TTFParser) Hash() string {
+	return fmt.Sprintf("%x", sha1.Sum(t.cacheFontData))
 }

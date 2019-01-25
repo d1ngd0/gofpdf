@@ -14,20 +14,20 @@ const ContentTypeText = 1
 
 type cacheContentText struct {
 	//---setup---
-	rectangle      *Rect
-	textColor      Rgb
-	grayFill       float64
-	fontCountIndex int //Curr.Font_FontCount+1
-	fontSize       int
-	fontStyle      int
-	setXCount      int //จำนวนครั้งที่ใช้ setX
-	x, y           float64
-	fontSubset     *SubsetFontObj
-	pageheight     float64
-	contentType    int
-	cellOpt        CellOption
-	lineWidth      float64
-	text           string
+	rectangle   *Rect
+	textColor   Rgb
+	grayFill    float64
+	fontObjId   string //Curr.Font_FontCount+1
+	fontSize    int
+	fontStyle   int
+	setXCount   int //จำนวนครั้งที่ใช้ setX
+	x, y        float64
+	fontSubset  *SubsetFontObj
+	pageheight  float64
+	contentType int
+	cellOpt     CellOption
+	lineWidth   float64
+	text        string
 	//---result---
 	cellWidthPdfUnit, textWidthPdfUnit float64
 	cellHeightPdfUnit                  float64
@@ -40,7 +40,7 @@ func (c *cacheContentText) isSame(cache cacheContentText) bool {
 	}
 	if c.textColor.equal(cache.textColor) &&
 		c.grayFill == cache.grayFill &&
-		c.fontCountIndex == cache.fontCountIndex &&
+		c.fontObjId == cache.fontObjId &&
 		c.fontSize == cache.fontSize &&
 		c.fontStyle == cache.fontStyle &&
 		c.setXCount == cache.setXCount &&
@@ -124,7 +124,7 @@ func (c *cacheContentText) write(w io.Writer, protection *PDFProtection) error {
 
 	io.WriteString(w, "BT\n")
 	fmt.Fprintf(w, "%0.2f %0.2f TD\n", x, y)
-	fmt.Fprintf(w, "/F%d %d Tf\n", c.fontCountIndex, c.fontSize)
+	fmt.Fprintf(w, "/%s %d Tf\n", c.fontObjId, c.fontSize)
 	if !(r == 0 && g == 0 && b == 0) {
 		rFloat := float64(r) * 0.00392156862745
 		gFloat := float64(g) * 0.00392156862745
@@ -333,7 +333,7 @@ type CacheContent struct {
 func (c *CacheContent) Setup(rectangle *Rect,
 	textColor Rgb,
 	grayFill float64,
-	fontCountIndex int, //Curr.Font_FontCount+1
+	fontObjId string, //Curr.Font_FontCount+1
 	fontSize int,
 	fontStyle int,
 	setXCount int, //จำนวนครั้งที่ใช้ setX
@@ -345,20 +345,20 @@ func (c *CacheContent) Setup(rectangle *Rect,
 	lineWidth float64,
 ) {
 	c.cacheContentText = cacheContentText{
-		fontSubset:     fontSubset,
-		rectangle:      rectangle,
-		textColor:      textColor,
-		grayFill:       grayFill,
-		fontCountIndex: fontCountIndex,
-		fontSize:       fontSize,
-		fontStyle:      fontStyle,
-		setXCount:      setXCount,
-		x:              x,
-		y:              y,
-		pageheight:     pageheight,
-		contentType:    ContentTypeCell,
-		cellOpt:        cellOpt,
-		lineWidth:      lineWidth,
+		fontSubset:  fontSubset,
+		rectangle:   rectangle,
+		textColor:   textColor,
+		grayFill:    grayFill,
+		fontObjId:   fontObjId,
+		fontSize:    fontSize,
+		fontStyle:   fontStyle,
+		setXCount:   setXCount,
+		x:           x,
+		y:           y,
+		pageheight:  pageheight,
+		contentType: ContentTypeCell,
+		cellOpt:     cellOpt,
+		lineWidth:   lineWidth,
 	}
 }
 

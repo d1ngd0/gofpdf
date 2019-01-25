@@ -20,6 +20,7 @@ type ImageObj struct {
 	rawImgReader  *bytes.Reader
 	imginfo       imgInfo
 	pdfProtection *PDFProtection
+	procsetid     string
 	//getRoot func() *Fpdf
 }
 
@@ -179,6 +180,9 @@ func (i *ImageObj) Parse() error {
 }
 
 // hash returns the hash of the image object
-func (i *ImageObj) hash() string {
-	return fmt.Sprintf("%x", sha1.Sum(i.imginfo.data))
+func (i *ImageObj) procsetIdentifier() string {
+	if i.procsetid == "" {
+		i.procsetid = fmt.Sprintf("I%x", sha1.Sum(i.imginfo.data))
+	}
+	return i.procsetid
 }

@@ -455,7 +455,7 @@ func (gp *Fpdf) imageByHolder(img ImageHolder, x float64, y float64, rect *Rect)
 			return err
 		}
 		index := gp.addObj(imgobj)
-		id := fmt.Sprintf("I%s", imgobj.hash())
+		id := imgobj.procsetIdentifier()
 		if gp.indexOfProcSet != -1 {
 			//ยัดรูป
 			procset := gp.pdfObjs[gp.indexOfProcSet].(*ProcSetObj)
@@ -1010,13 +1010,13 @@ func (gp *Fpdf) AddTTFFontByReaderWithOption(family string, rd io.Reader, option
 	subsetFont.SetIndexObjCIDFont(cidindex)
 	subsetFont.SetIndexObjUnicodeMap(unicodeindex)
 	index := gp.addObj(subsetFont) //add หลังสุด
+	id := subsetFont.procsetIdentifier()
 
 	if gp.indexOfProcSet != -1 {
 		procset := gp.pdfObjs[gp.indexOfProcSet].(*ProcSetObj)
 		if !procset.Realtes.IsContainsFamilyAndStyle(family, option.Style&^Underline) {
-			procset.Realtes = append(procset.Realtes, RelateFont{Family: family, IndexOfObj: index, CountOfFont: gp.curr.CountOfFont, Style: option.Style &^ Underline})
+			procset.Realtes = append(procset.Realtes, RelateFont{Family: family, IndexOfObj: index, IdOfObj: id, Style: option.Style &^ Underline})
 			subsetFont.CountOfFont = gp.curr.CountOfFont
-			gp.curr.CountOfFont++
 		}
 	}
 	return nil

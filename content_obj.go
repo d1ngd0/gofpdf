@@ -79,28 +79,28 @@ func (c *ContentObj) AppendStreamText(text string) error {
 	//support only CURRENT_FONT_TYPE_SUBSET
 	textColor := c.getRoot().curr.textColor()
 	grayFill := c.getRoot().curr.grayFill
-	fontCountIndex := c.getRoot().curr.Font_FontCount + 1
 	fontSize := c.getRoot().curr.Font_Size
 	fontStyle := c.getRoot().curr.Font_Style
 	x := c.getRoot().curr.X
 	y := c.getRoot().curr.Y
 	setXCount := c.getRoot().curr.setXCount
 	fontSubset := c.getRoot().curr.Font_ISubset
+	fontObjId := fontSubset.procsetIdentifier()
 
 	cache := cacheContentText{
-		fontSubset:     fontSubset,
-		rectangle:      nil,
-		textColor:      textColor,
-		grayFill:       grayFill,
-		fontCountIndex: fontCountIndex,
-		fontSize:       fontSize,
-		fontStyle:      fontStyle,
-		setXCount:      setXCount,
-		x:              x,
-		y:              y,
-		pageheight:     c.getRoot().curr.pageSize.H,
-		contentType:    ContentTypeText,
-		lineWidth:      c.getRoot().curr.lineWidth,
+		fontSubset:  fontSubset,
+		rectangle:   nil,
+		textColor:   textColor,
+		grayFill:    grayFill,
+		fontObjId:   fontObjId,
+		fontSize:    fontSize,
+		fontStyle:   fontStyle,
+		setXCount:   setXCount,
+		x:           x,
+		y:           y,
+		pageheight:  c.getRoot().curr.pageSize.H,
+		contentType: ContentTypeText,
+		lineWidth:   c.getRoot().curr.lineWidth,
 	}
 
 	var err error
@@ -117,29 +117,29 @@ func (c *ContentObj) AppendStreamSubsetFont(rectangle *Rect, text string, cellOp
 
 	textColor := c.getRoot().curr.textColor()
 	grayFill := c.getRoot().curr.grayFill
-	fontCountIndex := c.getRoot().curr.Font_FontCount + 1
 	fontSize := c.getRoot().curr.Font_Size
 	fontStyle := c.getRoot().curr.Font_Style
 	x := c.getRoot().curr.X
 	y := c.getRoot().curr.Y
 	setXCount := c.getRoot().curr.setXCount
 	fontSubset := c.getRoot().curr.Font_ISubset
+	fontObjId := fontSubset.procsetIdentifier()
 
 	cache := cacheContentText{
-		fontSubset:     fontSubset,
-		rectangle:      rectangle,
-		textColor:      textColor,
-		grayFill:       grayFill,
-		fontCountIndex: fontCountIndex,
-		fontSize:       fontSize,
-		fontStyle:      fontStyle,
-		setXCount:      setXCount,
-		x:              x,
-		y:              y,
-		pageheight:     c.getRoot().curr.pageSize.H,
-		contentType:    ContentTypeCell,
-		cellOpt:        cellOpt,
-		lineWidth:      c.getRoot().curr.lineWidth,
+		fontSubset:  fontSubset,
+		rectangle:   rectangle,
+		textColor:   textColor,
+		grayFill:    grayFill,
+		fontObjId:   fontObjId,
+		fontSize:    fontSize,
+		fontStyle:   fontStyle,
+		setXCount:   setXCount,
+		x:           x,
+		y:           y,
+		pageheight:  c.getRoot().curr.pageSize.H,
+		contentType: ContentTypeCell,
+		cellOpt:     cellOpt,
+		lineWidth:   c.getRoot().curr.lineWidth,
 	}
 	var err error
 	c.getRoot().curr.X, c.getRoot().curr.Y, err = c.listCache.appendContentText(cache, text)

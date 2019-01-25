@@ -28,7 +28,7 @@ func (pr *ProcSetObj) write(w io.Writer, objID int) error {
 	max := len(pr.Realtes)
 	for i < max {
 		realte := pr.Realtes[i]
-		fmt.Fprintf(w, "      /F%d %d 0 R\n", realte.CountOfFont+1, realte.IndexOfObj+1)
+		fmt.Fprintf(w, "      /%s %d 0 R\n", realte.IdOfObj, realte.IndexOfObj+1)
 		i++
 	}
 	io.WriteString(w, ">>\n")
@@ -79,7 +79,7 @@ func (re *RelateFonts) IsContainsFamilyAndStyle(family string, style int) bool {
 type RelateFont struct {
 	Family string
 	//etc /F1
-	CountOfFont int
+	IdOfObj string
 	//etc  5 0 R
 	IndexOfObj int
 	Style      int // Regular|Bold|Italic

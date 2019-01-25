@@ -15,6 +15,7 @@ var ErrCharNotFound = errors.New("char not found")
 //SubsetFontObj pdf subsetFont object
 type SubsetFontObj struct {
 	ttfp                  core.TTFParser
+	procsetid             string
 	Family                string
 	CharacterToGlyphIndex *MapOfCharacterToGlyphIndex
 	CountOfFont           int
@@ -253,4 +254,12 @@ func (s *SubsetFontObj) GetUt() int {
 //GetUp underline postion
 func (s *SubsetFontObj) GetUp() int {
 	return s.ttfp.UnderlinePosition()
+}
+
+func (s *SubsetFontObj) procsetIdentifier() string {
+	if s.procsetid == "" {
+		s.procsetid = fmt.Sprintf("F%s", s.ttfp.Hash())
+	}
+
+	return s.procsetid
 }
