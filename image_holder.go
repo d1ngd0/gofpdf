@@ -2,7 +2,7 @@ package gofpdf
 
 import (
 	"bytes"
-	"crypto/md5"
+	"crypto/sha1"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -37,44 +37,27 @@ type imageBuff struct {
 }
 
 func newImageBuff(b []byte) (*imageBuff, error) {
-	h := md5.New()
-	_, err := h.Write(b)
-	if err != nil {
-		return nil, err
-	}
 	var i imageBuff
-	i.id = fmt.Sprintf("%x", h.Sum(nil))
+	i.id = fmt.Sprintf("%x", sha1.Sum(b))
 	i.Write(b)
 	return &i, nil
 }
 
 func newImageBuffByPath(path string) (*imageBuff, error) {
-	var i imageBuff
-	i.id = path
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	i.Write(b)
-	return &i, nil
+	return newImageBuff(b)
 }
 
 func newImageBuffByReader(r io.Reader) (*imageBuff, error) {
-
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
 
-	h := md5.New()
-	_, err = h.Write(b)
-	if err != nil {
-		return nil, err
-	}
-	var i imageBuff
-	i.id = fmt.Sprintf("%x", h.Sum(nil))
-	i.Write(b)
-	return &i, nil
+	return newImageBuff(b)
 }
 
 func newImageBuffByURL(url string) (*imageBuff, error) {

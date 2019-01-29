@@ -23,8 +23,6 @@ type Current struct {
 
 	//img
 	CountOfImg int
-	//cache of image in pdf file
-	ImgCaches map[string]ImageCache
 
 	//text color
 	txtColor Rgb
@@ -35,6 +33,8 @@ type Current struct {
 	grayStroke float64
 
 	lineWidth float64
+	capStyle  int
+	joinStyle int
 
 	//current page size
 	pageSize *Rect
@@ -46,12 +46,6 @@ func (c *Current) setTextColor(rgb Rgb) {
 
 func (c *Current) textColor() Rgb {
 	return c.txtColor
-}
-
-type ImageCache struct {
-	Path string //ID or Path
-	Id   string
-	Rect *Rect
 }
 
 //Rgb  rgb color

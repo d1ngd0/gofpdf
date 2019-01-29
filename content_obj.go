@@ -21,6 +21,13 @@ func (c *ContentObj) init(funcGetRoot func() *Fpdf) {
 	c.getRoot = funcGetRoot
 }
 
+func (c *ContentObj) bytes(objID int) ([]byte, error) {
+	buff := GetBuffer()
+	defer PutBuffer(buff)
+	err := c.listCache.write(buff, c.protection())
+	return buff.Bytes(), err
+}
+
 func (c *ContentObj) write(w io.Writer, objID int) error {
 	buff := GetBuffer()
 	defer PutBuffer(buff)
@@ -209,6 +216,17 @@ func (c *ContentObj) AppendStreamLineTo(x, y float64) {
 	c.listCache.append(&cache)
 }
 
+// AppendStreamUseTemplate append a use template
+func (c *ContentObj) AppendStreamUseTemplate(id string, x, y, h, sx, sy float64) {
+	var cache cacheContentUseTemplate
+	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.id = id
+	cache.x, cache.y = x, y
+	cache.sx, cache.sy = sx, sy
+	cache.h = h
+	c.listCache.append(&cache)
+}
+
 //AppendStreamLine append line
 func (c *ContentObj) AppendStreamLine(x1 float64, y1 float64, x2 float64, y2 float64) {
 	//h := c.getRoot().config.PageSize.H
@@ -368,7 +386,20 @@ func (c *ContentObj) AppendStreamSetLineType(t string) {
 	var cache cacheContentLineType
 	cache.lineType = t
 	c.listCache.append(&cache)
+}
 
+// AppendStreamSetLineType set the line type
+func (c *ContentObj) AppendStreamSetCapStyle(t int) {
+	var cache cacheContentCapStyle
+	cache.style = t
+	c.listCache.append(&cache)
+}
+
+// AppendStreamSetJoinType set the line type
+func (c *ContentObj) AppendStreamSetJoinStyle(t int) {
+	var cache cacheContentJoinStyle
+	cache.style = t
+	c.listCache.append(&cache)
 }
 
 //AppendStreamSetGrayFill  set the grayscale fills

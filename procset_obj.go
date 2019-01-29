@@ -51,11 +51,11 @@ func (pr *ProcSetObj) getType() string {
 
 type RelateFonts []RelateFont
 
-func (re *RelateFonts) IsContainsFamily(family string) bool {
+func (re RelateFonts) IsContainsFamily(family string) bool {
 	i := 0
-	max := len(*re)
+	max := len(re)
 	for i < max {
-		if (*re)[i].Family == family {
+		if re[i].Family == family {
 			return true
 		}
 		i++
@@ -64,16 +64,26 @@ func (re *RelateFonts) IsContainsFamily(family string) bool {
 }
 
 // IsContainsFamilyAndStyle - checks if already exists font with same name and style
-func (re *RelateFonts) IsContainsFamilyAndStyle(family string, style int) bool {
+func (re RelateFonts) IsContainsFamilyAndStyle(family string, style int) bool {
 	i := 0
-	max := len(*re)
+	max := len(re)
 	for i < max {
-		if (*re)[i].Family == family && (*re)[i].Style == style {
+		if re[i].Family == family && re[i].Style == style {
 			return true
 		}
 		i++
 	}
 	return false
+}
+
+func (re RelateFonts) getIndex(id string) int {
+	for x := 0; x < len(re); x++ {
+		if re[x].IdOfObj == id {
+			return re[x].IndexOfObj
+		}
+	}
+
+	return -1
 }
 
 type RelateFont struct {
@@ -91,4 +101,14 @@ type RealteXobject struct {
 	IndexOfObj int
 	// should start with I when image
 	IdOfObj string
+}
+
+func (rxo RealteXobjects) getIndex(id string) int {
+	for x := 0; x < len(rxo); x++ {
+		if rxo[x].IdOfObj == id {
+			return rxo[x].IndexOfObj
+		}
+	}
+
+	return -1
 }

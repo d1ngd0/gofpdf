@@ -68,7 +68,7 @@ type Fpdf struct {
 //SetLineWidth : set line width
 func (gp *Fpdf) SetLineWidth(width float64) {
 	gp.curr.lineWidth = gp.UnitsToPoints(width)
-	gp.getContent().AppendStreamSetLineWidth(gp.UnitsToPoints(width))
+	gp.getContent().AppendStreamSetLineWidth(gp.curr.lineWidth)
 }
 
 //SetCompressLevel : set compress Level for content streams
@@ -104,6 +104,39 @@ func (gp *Fpdf) SetNoCompression() {
 //  pdf.Line(50, 400, 550, 400)
 func (gp *Fpdf) SetLineType(linetype string) {
 	gp.getContent().AppendStreamSetLineType(linetype)
+}
+
+const (
+	CapStyleDefault = 0
+	CapStyleRound   = 1
+	CapStyleSquare  = 2
+)
+
+// SetLineCapStyle defines the line cap style. styleStr should be "butt",
+// "round" or "square". A square style projects from the end of the line. The
+// method can be called before the first page is created. The value is
+// retained from page to page.
+func (gp *Fpdf) SetLineCapStyle(style int) {
+	if style != gp.curr.capStyle {
+		gp.curr.capStyle = style
+		gp.getContent().AppendStreamSetCapStyle(style)
+	}
+}
+
+const (
+	JoinStyleRound   = 1
+	JoinStyleBevel   = 2
+	JoinStyleDefault = 0
+)
+
+// SetLineJoinStyle defines the line cap style. styleStr should be "miter",
+// "round" or "bevel". The method can be called before the first page
+// is created. The value is retained from page to page.
+func (gp *Fpdf) SetLineJoinStyle(style int) {
+	if style != gp.curr.joinStyle {
+		gp.curr.joinStyle = style
+		gp.getContent().AppendStreamSetJoinStyle(gp.curr.joinStyle)
+	}
 }
 
 // Beziergon draws a closed figure defined by a series of cubic Bézier curve
@@ -418,86 +451,159 @@ func (gp *Fpdf) ImageByHolder(img ImageHolder, x float64, y float64, rect *Rect)
 }
 
 func (gp *Fpdf) imageByHolder(img ImageHolder, x float64, y float64, rect *Rect) error {
-	cacheImageIndex := ""
-	for id, imgcache := range gp.curr.ImgCaches {
-		if img.ID() == imgcache.Path {
-			cacheImageIndex = id
-			break
-		}
+	cacheImageIndex, err := gp.registerImageByHolder(img)
+	if err != nil {
+		return err
 	}
 
-	if cacheImageIndex == "" { //new image
-
-		//create img object
-		imgobj := new(ImageObj)
-		imgobj.init(func() *Fpdf {
-			return gp
-		})
-		imgobj.setProtection(gp.protection())
-
-		err := imgobj.SetImage(img)
-		if err != nil {
-			return err
-		}
-
-		var imgRect *Rect
-		if rect == nil {
-			imgRect, err = imgobj.getRect()
-			if err != nil {
-				return err
-			}
-		} else {
-			imgRect = rect
-		}
-
-		err = imgobj.parse()
-		if err != nil {
-			return err
-		}
-		index := gp.addObj(imgobj)
-		id := imgobj.procsetIdentifier()
-		if gp.indexOfProcSet != -1 {
-			//ยัดรูป
-			procset := gp.pdfObjs[gp.indexOfProcSet].(*ProcSetObj)
-			gp.getContent().AppendStreamImage(id, x, y, imgRect)
-			procset.RealteXobjs = append(procset.RealteXobjs, RealteXobject{IndexOfObj: index, IdOfObj: id})
-			//เก็บข้อมูลรูปเอาไว้
-			var imgcache ImageCache
-			imgcache.Id = id
-			imgcache.Path = img.ID()
-			imgcache.Rect = imgRect
-			gp.curr.ImgCaches[id] = imgcache
-		}
-
-		if imgobj.haveSMask() {
-			smaskObj, err := imgobj.createSMask()
-			if err != nil {
-				return err
-			}
-			imgobj.imginfo.smarkObjID = gp.addObj(smaskObj)
-		}
-
-		if imgobj.isColspaceIndexed() {
-			dRGB, err := imgobj.createDeviceRGB()
-			if err != nil {
-				return err
-			}
-			dRGB.getRoot = func() *Fpdf {
-				return gp
-			}
-			imgobj.imginfo.deviceRGBObjID = gp.addObj(dRGB)
-		}
-
-	} else { //same img
-		var imgRect *Rect
-		if rect == nil {
-			imgRect = gp.curr.ImgCaches[cacheImageIndex].Rect
-		} else {
-			imgRect = rect
-		}
-		gp.getContent().AppendStreamImage(cacheImageIndex, x, y, imgRect)
-	}
+	gp.getContent().AppendStreamImage(cacheImageIndex, x, y, rect)
 	return nil
+}
+
+// CreateTemplate defines a new template using the current page size.
+func (gp *Fpdf) CreateTemplate(fn TplFunc) (Template, error) {
+	return newTpl(Point{0, 0}, gp.config, fn, gp)
+}
+
+// CreateTemplateCustom starts a template, using the given bounds.
+func (gp *Fpdf) CreateTemplateCustom(corner Point, config Config, fn TplFunc) (Template, error) {
+	config.PageSize = config.PageSize.UnitsToPoints(gp.config.Unit)
+	corner = corner.ToPoints(gp.config.Unit)
+
+	return newTpl(corner, config, fn, gp)
+}
+
+// CreateTemplate creates a template that is not attached to any document.
+func CreateTemplate(corner Point, config Config, fn TplFunc) (Template, error) {
+	config.PageSize = config.PageSize.UnitsToPoints(config.Unit)
+	corner = corner.ToPoints(config.Unit)
+
+	return newTpl(corner, config, fn, nil)
+}
+
+// UseTemplate adds a template to the current page or another template,
+// using the size and position at which it was originally written.
+func (gp *Fpdf) UseTemplate(t Template) error {
+	if t == nil {
+		return errors.New("template is nil")
+	}
+
+	corner, size := t.Size()
+	return gp.UseTemplateScaled(t, corner, size)
+}
+
+// UseTemplateScaled adds a template to the current page or another template,
+// using the given page coordinates.
+func (gp *Fpdf) UseTemplateScaled(t Template, corner Point, size *Rect) error {
+	if t == nil {
+		return errors.New("template is nil")
+	}
+
+	templates := t.Templates()
+	for x := 0; x < len(templates); x++ {
+		if _, err := gp.registerTpl(templates[x]); err != nil {
+			return err
+		}
+	}
+
+	imgs := t.Images()
+	for x := 0; x < len(imgs); x++ {
+		if _, err := gp.registerImageByHolder(imgs[x]); err != nil {
+			return err
+		}
+	}
+
+	fonts := t.Fonts()
+	for x := 0; x < len(fonts); x++ {
+		if err := gp.AddTTFFontByReaderWithOption(fonts[x].family, fonts[x], fonts[x].option); err != nil {
+			return err
+		}
+	}
+
+	id, err := gp.registerTpl(t)
+	if err != nil {
+		return err
+	}
+
+	_, tSize := t.Size()
+	scalex := size.W / tSize.W
+	scaley := size.H / tSize.H
+
+	gp.getContent().AppendStreamUseTemplate(id, corner.X, corner.Y, size.H, scalex, scaley)
+	return nil
+}
+
+func (gp *Fpdf) registerTpl(template Template) (string, error) {
+	//create img object
+	tplObj := newTemplateObj(template, gp.protection(), func() *Fpdf {
+		return gp
+	})
+	id := tplObj.procsetIdentifier()
+
+	if gp.hasProcsetIndex(id, false) {
+		return id, nil
+	}
+
+	index := gp.addObj(tplObj)
+
+	procset := gp.getProcset()
+	procset.RealteXobjs = append(procset.RealteXobjs, RealteXobject{IndexOfObj: index, IdOfObj: id})
+
+	return id, nil
+}
+
+func (gp *Fpdf) getProcsetIndex(id string, isFont bool) int {
+	if isFont {
+		return gp.getProcset().Realtes.getIndex(id)
+	}
+	return gp.getProcset().RealteXobjs.getIndex(id)
+}
+
+func (gp *Fpdf) hasProcsetIndex(id string, isFont bool) bool {
+	return gp.getProcsetIndex(id, isFont) != -1
+}
+
+func (gp *Fpdf) registerImageByHolder(img ImageHolder) (string, error) {
+	//create img object
+	imgobj, err := NewImageObj(img, gp.protection(), func() *Fpdf {
+		return gp
+	})
+	id := imgobj.procsetIdentifier()
+
+	if err != nil {
+		return "", err
+	}
+
+	if gp.hasProcsetIndex(id, false) {
+		return id, nil
+	}
+
+	index := gp.addObj(imgobj)
+
+	if imgobj.haveSMask() {
+		smaskObj, err := imgobj.createSMask()
+		if err != nil {
+			return "", err
+		}
+		imgobj.imginfo.smarkObjID = gp.addObj(smaskObj)
+	}
+
+	if imgobj.isColspaceIndexed() {
+		dRGB, err := imgobj.createDeviceRGB()
+		if err != nil {
+			return "", err
+		}
+		dRGB.getRoot = func() *Fpdf {
+			return gp
+		}
+		imgobj.imginfo.deviceRGBObjID = gp.addObj(dRGB)
+	}
+
+	//ยัดรูป
+	procset := gp.getProcset()
+	procset.RealteXobjs = append(procset.RealteXobjs, RealteXobject{IndexOfObj: index, IdOfObj: id})
+
+	return id, nil
 }
 
 //Image : draw image
@@ -592,12 +698,9 @@ func New(config Config) *Fpdf {
 	gp.addObj(catalog)
 	gp.indexOfPagesObj = gp.addObj(pages)
 
-	//indexOfProcSet
-	procset := new(ProcSetObj)
-	procset.init(func() *Fpdf {
-		return gp
-	})
-	gp.indexOfProcSet = gp.addObj(procset)
+	// initiate the procset
+	gp.indexOfProcSet = -1
+	_ = gp.getProcset()
 
 	if gp.isUseProtection() {
 		gp.pdfProtection = gp.createProtection()
@@ -975,6 +1078,12 @@ func (gp *Fpdf) AddTTFFontByReaderWithOption(family string, rd io.Reader, option
 		return err
 	}
 
+	id := subsetFont.procsetIdentifier()
+	// font already exists, so lets skip it
+	if gp.hasProcsetIndex(id, true) {
+		return nil
+	}
+
 	unicodemap := new(UnicodeMap)
 	unicodemap.init(func() *Fpdf {
 		return gp
@@ -1010,14 +1119,11 @@ func (gp *Fpdf) AddTTFFontByReaderWithOption(family string, rd io.Reader, option
 	subsetFont.SetIndexObjCIDFont(cidindex)
 	subsetFont.SetIndexObjUnicodeMap(unicodeindex)
 	index := gp.addObj(subsetFont) //add หลังสุด
-	id := subsetFont.procsetIdentifier()
 
-	if gp.indexOfProcSet != -1 {
-		procset := gp.pdfObjs[gp.indexOfProcSet].(*ProcSetObj)
-		if !procset.Realtes.IsContainsFamilyAndStyle(family, option.Style&^Underline) {
-			procset.Realtes = append(procset.Realtes, RelateFont{Family: family, IndexOfObj: index, IdOfObj: id, Style: option.Style &^ Underline})
-			subsetFont.CountOfFont = gp.curr.CountOfFont
-		}
+	procset := gp.getProcset()
+	if !procset.Realtes.IsContainsFamilyAndStyle(family, option.Style&^Underline) {
+		procset.Realtes = append(procset.Realtes, RelateFont{Family: family, IndexOfObj: index, IdOfObj: id, Style: option.Style &^ Underline})
+		subsetFont.CountOfFont = gp.curr.CountOfFont
 	}
 	return nil
 }
@@ -1093,7 +1199,6 @@ func (gp *Fpdf) SetCMYKFillColor(c, m, y, k uint8) {
 
 //MeasureTextWidth : measure Width of text (use current font)
 func (gp *Fpdf) MeasureTextWidth(text string, units int) (float64, error) {
-
 	err := gp.curr.Font_ISubset.AddChars(text) //AddChars for create CharacterToGlyphIndex
 	if err != nil {
 		return 0, err
@@ -1176,7 +1281,6 @@ func (gp *Fpdf) init() {
 	gp.curr.CountOfFont = 0
 	gp.curr.CountOfL = 0
 	gp.curr.CountOfImg = 0 //img
-	gp.curr.ImgCaches = make(map[string]ImageCache)
 	gp.anchors = make(map[string]anchorOption)
 
 	//init index
@@ -1354,6 +1458,73 @@ func (gp *Fpdf) getContent() *ContentObj {
 		content = gp.pdfObjs[gp.indexOfContent].(*ContentObj)
 	}
 	return content
+}
+
+func (gp *Fpdf) getProcset() *ProcSetObj {
+	var procset *ProcSetObj
+	if gp.indexOfProcSet <= -1 {
+		procset = new(ProcSetObj)
+		procset.init(func() *Fpdf {
+			return gp
+		})
+		gp.indexOfProcSet = gp.addObj(procset)
+	} else {
+		procset = gp.pdfObjs[gp.indexOfProcSet].(*ProcSetObj)
+	}
+	return procset
+}
+
+func (gp *Fpdf) getAllContent() map[int]*ContentObj {
+	cos := make(map[int]*ContentObj)
+	for x := 0; x < len(gp.pdfObjs); x++ {
+		if content, ok := gp.pdfObjs[x].(*ContentObj); ok {
+			cos[x] = content
+		}
+	}
+
+	return cos
+}
+
+func (gp *Fpdf) getImageHolders() ([]ImageHolder, error) {
+	ios := make([]ImageHolder, 0)
+	for x := 0; x < len(gp.pdfObjs); x++ {
+		if img, ok := gp.pdfObjs[x].(*ImageObj); ok {
+			img.rawImgReader.Seek(0, 0)
+			img, err := newImageBuffByReader(img.rawImgReader)
+			if err != nil {
+				return ios, err
+			}
+
+			ios = append(ios, img)
+		}
+	}
+
+	return ios, nil
+}
+
+func (gp *Fpdf) getTemplateFonts() ([]*TemplateFont, error) {
+	tfs := make([]*TemplateFont, 0)
+
+	for x := 0; x < len(gp.pdfObjs); x++ {
+		if font, ok := gp.pdfObjs[x].(*SubsetFontObj); ok {
+			tfs = append(tfs, font.ToTemplateFont())
+		}
+	}
+
+	return tfs, nil
+}
+
+func (gp *Fpdf) getTemplates() ([]Template, error) {
+	ts := make([]Template, 0)
+
+	for x := 0; x < len(gp.pdfObjs); x++ {
+		if template, ok := gp.pdfObjs[x].(*TemplateObj); ok {
+			ts = append(ts, template.ToTemplate())
+		}
+	}
+
+	return ts, nil
+
 }
 
 // UnitsToPoints converts the units to the documents unit type

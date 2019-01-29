@@ -2,7 +2,6 @@ package gofpdf
 
 import (
 	"bytes"
-	"crypto/sha1"
 	"fmt"
 	"image"
 	_ "image/jpeg"
@@ -21,11 +20,22 @@ type ImageObj struct {
 	imginfo       imgInfo
 	pdfProtection *PDFProtection
 	procsetid     string
-	//getRoot func() *Fpdf
+	imageid       string
+	getRoot       func() *Fpdf
 }
 
-func (i *ImageObj) init(funcGetRoot func() *Fpdf) {
+func NewImageObj(img ImageHolder, pro *PDFProtection, funcGetRoot func() *Fpdf) (*ImageObj, error) {
+	imgobj := new(ImageObj)
+	imgobj.imageid = img.ID()
+	imgobj.procsetid = fmt.Sprintf("I%s", imgobj.imageid)
+	imgobj.pdfProtection = pro
+	imgobj.getRoot = funcGetRoot
+	if err := imgobj.SetImage(img); err != nil {
+		return imgobj, err
+	}
 
+	err := imgobj.parse()
+	return imgobj, err
 }
 
 func (i *ImageObj) setProtection(p *PDFProtection) {
@@ -163,7 +173,6 @@ func (i *ImageObj) getRect() (*Rect, error) {
 }
 
 func (i *ImageObj) parse() error {
-
 	i.rawImgReader.Seek(0, 0)
 	imginfo, err := parseImg(i.rawImgReader)
 	if err != nil {
@@ -181,8 +190,5 @@ func (i *ImageObj) Parse() error {
 
 // hash returns the hash of the image object
 func (i *ImageObj) procsetIdentifier() string {
-	if i.procsetid == "" {
-		i.procsetid = fmt.Sprintf("I%x", sha1.Sum(i.imginfo.data))
-	}
 	return i.procsetid
 }
