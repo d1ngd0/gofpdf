@@ -518,6 +518,9 @@ func (gp *Fpdf) UseTemplateScaled(t Template, corner Point, size *Rect) error {
 		if err := gp.AddTTFFontByReaderWithOption(fonts[x].family, fonts[x], fonts[x].option); err != nil {
 			return err
 		}
+
+		subsetFont := gp.pdfObjs[gp.getProcsetIndex(fonts[x].procsetId, true)].(*SubsetFontObj)
+		subsetFont.AddChars(fonts[x].characters)
 	}
 
 	id, err := gp.registerTpl(t)

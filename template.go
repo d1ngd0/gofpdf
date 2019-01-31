@@ -53,11 +53,13 @@ func NewTemplateFont(id, family string, option TtfOption, b []byte) *TemplateFon
 }
 
 type TemplateFont struct {
-	id      string
-	family  string
-	option  TtfOption
-	b       []byte
-	bbuffer io.Reader
+	id         string
+	procsetId  string
+	family     string
+	option     TtfOption
+	b          []byte
+	bbuffer    io.Reader
+	characters string
 }
 
 func (t *TemplateFont) Read(p []byte) (n int, err error) {
@@ -74,7 +76,7 @@ func (t *TemplateFont) GobEncode() ([]byte, error) {
 	var err error
 	w := new(bytes.Buffer)
 	encoder := gob.NewEncoder(w)
-	encodeMe := []interface{}{t.id, t.family, t.option, t.b}
+	encodeMe := []interface{}{t.id, t.procsetId, t.family, t.option, t.b, t.characters}
 
 	for x := 0; x < len(encodeMe); x++ {
 		if err == nil {
@@ -91,7 +93,7 @@ func (t *TemplateFont) GobDecode(buf []byte) error {
 	r := bytes.NewBuffer(buf)
 	decoder := gob.NewDecoder(r)
 
-	decodeMe := []interface{}{&t.id, &t.family, &t.option, &t.b}
+	decodeMe := []interface{}{&t.id, &t.procsetId, &t.family, &t.option, &t.b, &t.characters}
 
 	for x := 0; x < len(decodeMe); x++ {
 		if err == nil {
@@ -275,6 +277,9 @@ func (t *FpdfTpl) GobEncode() ([]byte, error) {
 	}
 
 	if err == nil {
+		err = encoder.Encode(t.fonts)
+	}
+	if err == nil {
 		err = encoder.Encode(t.corner)
 	}
 	if err == nil {
@@ -316,6 +321,9 @@ func (t *FpdfTpl) GobDecode(buf []byte) error {
 		}
 	}
 
+	if err == nil {
+		err = decoder.Decode(&t.fonts)
+	}
 	if err == nil {
 		err = decoder.Decode(&t.corner)
 	}

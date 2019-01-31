@@ -266,6 +266,12 @@ func (s *SubsetFontObj) procsetIdentifier() string {
 
 // ToTemplateFont turns the subsetFontObject into a Template Font
 func (s *SubsetFontObj) ToTemplateFont() *TemplateFont {
-	return NewTemplateFont(s.ttfp.Hash(), s.Family,
-		s.ttfFontOption, s.ttfp.FontData())
+	return &TemplateFont{
+		id:         s.ttfp.Hash(),
+		procsetId:  s.procsetIdentifier(),
+		family:     s.Family,
+		option:     s.ttfFontOption,
+		b:          s.ttfp.FontData(),
+		characters: s.CharacterToGlyphIndex.AllKeysString(),
+	}
 }

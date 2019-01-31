@@ -65,3 +65,7 @@ func (m *MapOfCharacterToGlyphIndex) AllKeys() []rune {
 func (m *MapOfCharacterToGlyphIndex) AllVals() []uint {
 	return m.Vals
 }
+
+func (m *MapOfCharacterToGlyphIndex) AllKeysString() string {
+	return string(m.Keys)
+}
