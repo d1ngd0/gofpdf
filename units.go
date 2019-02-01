@@ -7,6 +7,7 @@ const (
 	Unit_MM           // Millimeters
 	Unit_CM           // centimeters
 	Unit_IN           // inches
+	unit_max          // used to validate constant values
 
 	// The math needed to convert units to points
 	conversion_Unit_PT = 1.0
@@ -14,40 +15,6 @@ const (
 	conversion_Unit_CM = 72.0 / 2.54
 	conversion_Unit_IN = 72.0
 )
-
-func NewConfig(unit int, rec Rect, p *PDFProtectionConfig, pb ...*PageBoundary) Config {
-	if p == nil {
-		p = new(PDFProtectionConfig)
-	}
-
-	c := Config{
-		Unit:       unit,
-		PageOption: PageOption{PageBoundaries: []*PageBoundary{NewPageSizeBoundary(unit, rec.W, rec.H)}},
-		Protection: *p,
-	}
-
-	for x := 0; x < len(pb); x++ {
-		c.PageOption.AddPageBoundary(pb[x])
-	}
-
-	return c
-}
-
-//Config static config
-type Config struct {
-	Unit       int // The unit type to use when composing the document.
-	PageOption PageOption
-	K          float64             // Not sure
-	Protection PDFProtectionConfig // Protection settings
-}
-
-//PDFProtectionConfig config of pdf protection
-type PDFProtectionConfig struct {
-	UseProtection bool
-	Permissions   int
-	UserPass      []byte
-	OwnerPass     []byte
-}
 
 // UnitsToPoints converts units of the provided type to points
 func UnitsToPoints(t int, u float64) float64 {

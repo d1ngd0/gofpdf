@@ -107,19 +107,21 @@ func (t *TemplateFont) GobDecode(buf []byte) error {
 type TplFunc func(*Fpdf) error
 
 // newTpl creates a template, copying graphics settings from a template if one is given
-func newTpl(corner Point, config Config, fn TplFunc, copyFrom *Fpdf) (Template, error) {
-	gp := New(config)
+func newTpl(corner Point, opts []PdfOption, fn TplFunc, copyFrom *Fpdf) (Template, error) {
+	gp, err := New(opts...)
+	if err != nil {
+		return nil, err
+	}
 	gp.AddPage()
 
 	if copyFrom != nil {
 		gp.loadParamsFromFpdf(copyFrom)
 	}
 
-	if err := fn(gp); err != nil {
+	if err = fn(gp); err != nil {
 		return nil, err
 	}
 
-	var err error
 	contents := gp.getAllContent()
 	bytes := make([][]byte, len(contents))
 	sizes := make([]Rect, len(contents))

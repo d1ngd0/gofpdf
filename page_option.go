@@ -12,6 +12,7 @@ const (
 	PageBoundaryBleed
 	PageBoundaryTrim
 	PageBoundaryArt
+	pageBoundaryMax
 )
 
 //PageOption option of page
@@ -87,55 +88,69 @@ func (pb *PageBoundary) TypeString() string {
 	return ""
 }
 
-func NewPageBoundary(u int, t int, x, y, w, h float64) *PageBoundary {
+func NewPageBoundary(u int, t int, x, y, w, h float64) (*PageBoundary, error) {
+	if t >= pageBoundaryMax {
+		return nil, fmt.Errorf("Page boundary %d is not valid", t)
+	}
+
 	UnitsToPointsVar(u, &x, &y, &w, &h)
 	return &PageBoundary{
 		Type:     t,
 		Position: Point{X: x, Y: y},
 		Size:     Rect{W: w, H: h},
-	}
+	}, nil
 }
 
-func (gp *Fpdf) NewPageBoundary(t int, x, y, w, h float64) *PageBoundary {
-	return NewPageBoundary(gp.config.Unit, t, x, y, w, h)
+func (gp *Fpdf) NewPageBoundary(t int, x, y, w, h float64) (*PageBoundary, error) {
+	return NewPageBoundary(gp.curr.unit, t, x, y, w, h)
 }
 
 func NewPageSizeBoundary(u int, w, h float64) *PageBoundary {
-	return NewPageBoundary(u, PageBoundaryMedia, 0, 0, w, h)
+	pb, _ := NewPageBoundary(u, PageBoundaryMedia, 0, 0, w, h)
+	return pb
 }
 
 func (gp *Fpdf) NewPageSizeBoundary(w, h float64) *PageBoundary {
-	return gp.NewPageBoundary(PageBoundaryMedia, 0, 0, w, h)
+	pb, _ := gp.NewPageBoundary(PageBoundaryMedia, 0, 0, w, h)
+	return pb
 }
 
 func NewCropPageBoundary(u int, x, y, w, h float64) *PageBoundary {
-	return NewPageBoundary(u, PageBoundaryCrop, x, y, w, h)
+	pb, _ := NewPageBoundary(u, PageBoundaryCrop, x, y, w, h)
+	return pb
 }
 
 func (gp *Fpdf) NewCropPageBoundary(x, y, w, h float64) *PageBoundary {
-	return gp.NewPageBoundary(PageBoundaryCrop, x, y, w, h)
+	pb, _ := gp.NewPageBoundary(PageBoundaryCrop, x, y, w, h)
+	return pb
 }
 
 func NewBleedPageBoundary(u int, x, y, w, h float64) *PageBoundary {
-	return NewPageBoundary(u, PageBoundaryBleed, x, y, w, h)
+	pb, _ := NewPageBoundary(u, PageBoundaryBleed, x, y, w, h)
+	return pb
 }
 
 func (gp *Fpdf) NewBleedPageBoundary(x, y, w, h float64) *PageBoundary {
-	return gp.NewPageBoundary(PageBoundaryBleed, x, y, w, h)
+	pb, _ := gp.NewPageBoundary(PageBoundaryBleed, x, y, w, h)
+	return pb
 }
 
 func NewTrimPageBoundary(u int, x, y, w, h float64) *PageBoundary {
-	return NewPageBoundary(u, PageBoundaryTrim, x, y, w, h)
+	pb, _ := NewPageBoundary(u, PageBoundaryTrim, x, y, w, h)
+	return pb
 }
 
 func (gp *Fpdf) NewTrimPageBoundary(x, y, w, h float64) *PageBoundary {
-	return gp.NewPageBoundary(PageBoundaryTrim, x, y, w, h)
+	pb, _ := gp.NewPageBoundary(PageBoundaryTrim, x, y, w, h)
+	return pb
 }
 
 func NewArtPageBoundary(u int, x, y, w, h float64) *PageBoundary {
-	return NewPageBoundary(u, PageBoundaryArt, x, y, w, h)
+	pb, _ := NewPageBoundary(u, PageBoundaryArt, x, y, w, h)
+	return pb
 }
 
 func (gp *Fpdf) NewArtPageBoundary(x, y, w, h float64) *PageBoundary {
-	return gp.NewPageBoundary(PageBoundaryArt, x, y, w, h)
+	pb, _ := gp.NewPageBoundary(PageBoundaryArt, x, y, w, h)
+	return pb
 }

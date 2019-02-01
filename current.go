@@ -36,7 +36,9 @@ type Current struct {
 	capStyle  int
 	joinStyle int
 
-	lheight float64
+	lheight    float64
+	unit       int
+	pageOption PageOption
 }
 
 func (c *Current) setTextColor(rgb Rgb) {

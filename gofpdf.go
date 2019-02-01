@@ -29,7 +29,6 @@ type Fpdf struct {
 	margins Margins
 
 	pdfObjs []IObj
-	config  Config
 	anchors map[string]anchorOption
 
 	/*---index ของ obj สำคัญๆ เก็บเพื่อลด loop ตอนค้นหา---*/
@@ -61,8 +60,9 @@ type Fpdf struct {
 	compressLevel int
 
 	//info
-	isUseInfo bool
-	info      *PdfInfo
+	isUseInfo   bool
+	info        *PdfInfo
+	appliedOpts []PdfOption
 }
 
 // Set a page boundary
@@ -79,7 +79,7 @@ func (gp *Fpdf) GetPageBoundary(t int) *PageBoundary {
 		}
 	}
 
-	return gp.config.PageOption.GetBoundary(t)
+	return gp.curr.pageOption.GetBoundary(t)
 }
 
 func (gp *Fpdf) GetBoundarySize(t int) (rec Rect) {
@@ -224,7 +224,7 @@ func (gp *Fpdf) SetLineJoinStyle(style int) {
 // Filling uses the current fill color.
 func (gp *Fpdf) Beziergon(pts Points, styleStr string) error {
 	// Thanks, Robert Lillack, for contributing this function.
-	points := pts.ToPoints(gp.config.Unit)
+	points := pts.ToPoints(gp.curr.unit)
 
 	if len(points) < 4 {
 		return fmt.Errorf("the number of points can not be less than 4. %d found", len(points))
@@ -531,7 +531,7 @@ func (gp *Fpdf) SetXY(x, y float64) {
 //ImageByHolder : draw image by ImageHolder
 func (gp *Fpdf) ImageByHolder(img ImageHolder, x float64, y float64, rect Rect) error {
 	gp.UnitsToPointsVar(&x, &y)
-	rect = rect.UnitsToPoints(gp.config.Unit)
+	rect = rect.UnitsToPoints(gp.curr.unit)
 
 	return gp.imageByHolder(img, x, y, rect)
 }
@@ -548,19 +548,19 @@ func (gp *Fpdf) imageByHolder(img ImageHolder, x float64, y float64, rect Rect) 
 
 // CreateTemplate defines a new template using the current page size.
 func (gp *Fpdf) CreateTemplate(fn TplFunc) (Template, error) {
-	return newTpl(Point{0, 0}, gp.config, fn, gp)
+	return newTpl(Point{0, 0}, gp.appliedOpts, fn, gp)
 }
 
 // CreateTemplateCustom starts a template, using the given bounds.
-func (gp *Fpdf) CreateTemplateCustom(corner Point, config Config, fn TplFunc) (Template, error) {
-	corner = corner.ToPoints(gp.config.Unit)
-	return newTpl(corner, config, fn, gp)
+func (gp *Fpdf) CreateTemplateCustom(corner Point, fn TplFunc, opts ...PdfOption) (Template, error) {
+	corner = corner.ToPoints(gp.curr.unit)
+	return newTpl(corner, opts, fn, gp)
 }
 
 // CreateTemplate creates a template that is not attached to any document.
-func CreateTemplate(corner Point, config Config, fn TplFunc) (Template, error) {
-	corner = corner.ToPoints(config.Unit)
-	return newTpl(corner, config, fn, nil)
+func CreateTemplate(corner Point, unit int, fn TplFunc, opts ...PdfOption) (Template, error) {
+	corner = corner.ToPoints(unit)
+	return newTpl(corner, opts, fn, nil)
 }
 
 // UseTemplate adds a template to the current page or another template,
@@ -694,7 +694,7 @@ func (gp *Fpdf) registerImageByHolder(img ImageHolder) (string, error) {
 //Image : draw image
 func (gp *Fpdf) Image(picPath string, x float64, y float64, rect Rect) error {
 	gp.UnitsToPointsVar(&x, &y)
-	rect = rect.UnitsToPoints(gp.config.Unit)
+	rect = rect.UnitsToPoints(gp.curr.unit)
 
 	imgh, err := ImageHolderByPath(picPath)
 	if err != nil {
@@ -706,7 +706,7 @@ func (gp *Fpdf) Image(picPath string, x float64, y float64, rect Rect) error {
 // ImageByReader adds an image to the pdf with a reader
 func (gp *Fpdf) ImageByReader(r io.Reader, x float64, y float64, rect Rect) error {
 	gp.UnitsToPointsVar(&x, &y)
-	rect = rect.UnitsToPoints(gp.config.Unit)
+	rect = rect.UnitsToPoints(gp.curr.unit)
 
 	imgh, err := newImageBuffByReader(r)
 	if err != nil {
@@ -719,7 +719,7 @@ func (gp *Fpdf) ImageByReader(r io.Reader, x float64, y float64, rect Rect) erro
 // ImageByURL adds an image to the pdf using the given url
 func (gp *Fpdf) ImageByURL(url string, x float64, y float64, rect Rect) error {
 	gp.UnitsToPointsVar(&x, &y)
-	rect = rect.UnitsToPoints(gp.config.Unit)
+	rect = rect.UnitsToPoints(gp.curr.unit)
 
 	imgh, err := newImageBuffByURL(url)
 	if err != nil {
@@ -746,7 +746,7 @@ func (gp *Fpdf) addPageWithOption(opt PageOption) {
 		return gp
 	})
 
-	page.setOption(gp.config.PageOption.merge(opt))
+	page.setOption(gp.curr.pageOption.merge(opt))
 
 	page.ResourcesRelate = strconv.Itoa(gp.indexOfProcSet+1) + " 0 R"
 	index := gp.addObj(page)
@@ -761,10 +761,17 @@ func (gp *Fpdf) addPageWithOption(opt PageOption) {
 }
 
 //New creates a new Fpdf Object
-func New(config Config) *Fpdf {
+func New(opts ...PdfOption) (*Fpdf, error) {
 	gp := new(Fpdf)
-	gp.config = config
 	gp.init()
+
+	for x := 0; x < len(opts); x++ {
+		if err := opts[x].apply(gp); err != nil {
+			return nil, err
+		}
+	}
+	gp.appliedOpts = opts
+
 	//สร้าง obj พื้นฐาน
 	catalog := new(CatalogObj)
 	catalog.init(func() *Fpdf {
@@ -781,11 +788,7 @@ func New(config Config) *Fpdf {
 	gp.indexOfProcSet = -1
 	_ = gp.getProcset()
 
-	if gp.isUseProtection() {
-		gp.pdfProtection = gp.createProtection()
-	}
-
-	return gp
+	return gp, nil
 }
 
 // SetFontWithStyle : set font style support Regular or Underline
@@ -1381,9 +1384,11 @@ func (gp *Fpdf) init() {
 	//No underline
 	//gp.IsUnderline = false
 	gp.curr.lineWidth = 1
-
 	// default to zlib.DefaultCompression
 	gp.compressLevel = zlib.DefaultCompression
+	// default units is points
+	gp.curr.unit = Unit_PT
+	gp.curr.pageOption.AddPageBoundary(NewPageSizeBoundary(Unit_PT, PageSizeA4.W, PageSizeA4.H))
 }
 
 func (gp *Fpdf) resetCurrXY() {
@@ -1392,17 +1397,7 @@ func (gp *Fpdf) resetCurrXY() {
 }
 
 func (gp *Fpdf) isUseProtection() bool {
-	return gp.config.Protection.UseProtection
-}
-
-func (gp *Fpdf) createProtection() *PDFProtection {
-	var prot PDFProtection
-	prot.setProtection(
-		gp.config.Protection.Permissions,
-		gp.config.Protection.UserPass,
-		gp.config.Protection.OwnerPass,
-	)
-	return &prot
+	return gp.pdfProtection != nil
 }
 
 func (gp *Fpdf) protection() *PDFProtection {
@@ -1626,22 +1621,22 @@ func (gp *Fpdf) getTemplates() ([]Template, error) {
 
 // UnitsToPoints converts the units to the documents unit type
 func (gp *Fpdf) UnitsToPoints(u float64) float64 {
-	return UnitsToPoints(gp.config.Unit, u)
+	return UnitsToPoints(gp.curr.unit, u)
 }
 
 // UnitsToPointsVar converts the units to the documents unit type for all variables passed in
 func (gp *Fpdf) UnitsToPointsVar(u ...*float64) {
-	UnitsToPointsVar(gp.config.Unit, u...)
+	UnitsToPointsVar(gp.curr.unit, u...)
 }
 
 // PointsToUnits converts the points to the documents unit type
 func (gp *Fpdf) PointsToUnits(u float64) float64 {
-	return PointsToUnits(gp.config.Unit, u)
+	return PointsToUnits(gp.curr.unit, u)
 }
 
 // PointsToUnits converts the points to the documents unit type for all variables passed in
 func (gp *Fpdf) PointsToUnitsVar(u ...*float64) {
-	PointsToUnitsVar(gp.config.Unit, u...)
+	PointsToUnitsVar(gp.curr.unit, u...)
 }
 
 func encodeUtf8(str string) string {

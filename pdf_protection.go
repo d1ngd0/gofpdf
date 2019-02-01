@@ -24,6 +24,14 @@ var protectionPadding = []byte{
 	0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80, 0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A,
 }
 
+//PDFProtectionConfig config of pdf protection
+type PDFProtectionConfig struct {
+	UseProtection bool
+	Permissions   int
+	UserPass      []byte
+	OwnerPass     []byte
+}
+
 //PDFProtection protection in pdf
 type PDFProtection struct {
 	encrypted bool   //whether document is protected

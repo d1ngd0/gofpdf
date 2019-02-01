@@ -21,7 +21,7 @@ func (p *PagesObj) write(w io.Writer, objID int) error {
 
 	io.WriteString(w, "<<\n")
 	fmt.Fprintf(w, "  /Type /%s\n", p.getType())
-	p.getRoot().config.PageOption.writePageBoundaries(w)
+	p.getRoot().curr.pageOption.writePageBoundaries(w)
 	fmt.Fprintf(w, "  /Count %d\n", p.PageCount)
 	fmt.Fprintf(w, "  /Kids [ %s ]\n", p.Kids) //sample Kids [ 3 0 R ]
 	io.WriteString(w, ">>\n")
