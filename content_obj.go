@@ -9,6 +9,7 @@ import (
 //ContentObj content object
 type ContentObj struct { //impl IObj
 	listCache listCacheContent
+	pageIndex int
 	//text bytes.Buffer
 	getRoot func() *Fpdf
 }
@@ -105,7 +106,7 @@ func (c *ContentObj) AppendStreamText(text string) error {
 		setXCount:   setXCount,
 		x:           x,
 		y:           y,
-		pageheight:  c.getRoot().curr.pageSize.H,
+		pageheight:  c.getRoot().GetBoundaryHeight(PageBoundaryMedia),
 		contentType: ContentTypeText,
 		lineWidth:   c.getRoot().curr.lineWidth,
 	}
@@ -120,7 +121,7 @@ func (c *ContentObj) AppendStreamText(text string) error {
 }
 
 //AppendStreamSubsetFont add stream of text
-func (c *ContentObj) AppendStreamSubsetFont(rectangle *Rect, text string, cellOpt CellOption) error {
+func (c *ContentObj) AppendStreamSubsetFont(rectangle Rect, text string, cellOpt CellOption) error {
 
 	textColor := c.getRoot().curr.textColor()
 	grayFill := c.getRoot().curr.grayFill
@@ -134,7 +135,7 @@ func (c *ContentObj) AppendStreamSubsetFont(rectangle *Rect, text string, cellOp
 
 	cache := cacheContentText{
 		fontSubset:  fontSubset,
-		rectangle:   rectangle,
+		rectangle:   &rectangle,
 		textColor:   textColor,
 		grayFill:    grayFill,
 		fontObjId:   fontObjId,
@@ -143,7 +144,7 @@ func (c *ContentObj) AppendStreamSubsetFont(rectangle *Rect, text string, cellOp
 		setXCount:   setXCount,
 		x:           x,
 		y:           y,
-		pageheight:  c.getRoot().curr.pageSize.H,
+		pageheight:  c.getRoot().GetBoundaryHeight(PageBoundaryMedia),
 		contentType: ContentTypeCell,
 		cellOpt:     cellOpt,
 		lineWidth:   c.getRoot().curr.lineWidth,
@@ -165,7 +166,7 @@ func (c *ContentObj) AppendStreamClosePath() {
 // AppendStreamCurve : appends a curve
 func (c *ContentObj) AppendStreamCurve(cx, cy, x, y float64) {
 	var cache cacheContentCurve
-	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.pageHeight = c.getRoot().GetBoundaryHeight(PageBoundaryMedia)
 	cache.x = x
 	cache.y = y
 	cache.cx = cx
@@ -183,7 +184,7 @@ func (c *ContentObj) AppendStreamDrawPath(styleStr string) {
 // AppendStreamArcTo : appends an arc to
 func (c *ContentObj) AppendStreamArcTo(x, y, rx, ry, degRotate, degStart, degEnd float64, styleStr string, path bool) {
 	var cache cacheContentArcTo
-	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.pageHeight = c.getRoot().GetBoundaryHeight(PageBoundaryMedia)
 	cache.currentX = &c.getRoot().curr.X
 	cache.currentY = &c.getRoot().curr.Y
 	cache.x = x
@@ -201,7 +202,7 @@ func (c *ContentObj) AppendStreamArcTo(x, y, rx, ry, degRotate, degStart, degEnd
 // AppendStreamPoint appends a point
 func (c *ContentObj) AppendStreamPoint(x, y float64) {
 	var cache cacheContentPoint
-	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.pageHeight = c.getRoot().GetBoundaryHeight(PageBoundaryMedia)
 	cache.x = x
 	cache.y = y
 	c.listCache.append(&cache)
@@ -210,7 +211,7 @@ func (c *ContentObj) AppendStreamPoint(x, y float64) {
 // AppendStreamLineTo appends a line to
 func (c *ContentObj) AppendStreamLineTo(x, y float64) {
 	var cache cacheContentLineTo
-	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.pageHeight = c.getRoot().GetBoundaryHeight(PageBoundaryMedia)
 	cache.x = x
 	cache.y = y
 	c.listCache.append(&cache)
@@ -219,7 +220,7 @@ func (c *ContentObj) AppendStreamLineTo(x, y float64) {
 // AppendStreamUseTemplate append a use template
 func (c *ContentObj) AppendStreamUseTemplate(id string, x, y, h, sx, sy float64) {
 	var cache cacheContentUseTemplate
-	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.pageHeight = c.getRoot().GetBoundaryHeight(PageBoundaryMedia)
 	cache.id = id
 	cache.x, cache.y = x, y
 	cache.sx, cache.sy = sx, sy
@@ -232,7 +233,7 @@ func (c *ContentObj) AppendStreamLine(x1 float64, y1 float64, x2 float64, y2 flo
 	//h := c.getRoot().config.PageSize.H
 	//c.stream.WriteString(fmt.Sprintf("%0.2f %0.2f m %0.2f %0.2f l s\n", x1, h-y1, x2, h-y2))
 	var cache cacheContentLine
-	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.pageHeight = c.getRoot().GetBoundaryHeight(PageBoundaryMedia)
 	cache.x1 = x1
 	cache.y1 = y1
 	cache.x2 = x2
@@ -243,7 +244,7 @@ func (c *ContentObj) AppendStreamLine(x1 float64, y1 float64, x2 float64, y2 flo
 //AppendStreamRectangle : draw rectangle from lower-left corner (x, y) with specif width/height
 func (c *ContentObj) AppendStreamRectangle(x float64, y float64, wdth float64, hght float64, style string) {
 	var cache cacheContentRectangle
-	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.pageHeight = c.getRoot().GetBoundaryHeight(PageBoundaryMedia)
 	cache.x = x
 	cache.y = y
 	cache.width = wdth
@@ -255,7 +256,7 @@ func (c *ContentObj) AppendStreamRectangle(x float64, y float64, wdth float64, h
 //AppendStreamOval append oval
 func (c *ContentObj) AppendStreamOval(x1 float64, y1 float64, x2 float64, y2 float64) {
 	var cache cacheContentOval
-	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.pageHeight = c.getRoot().GetBoundaryHeight(PageBoundaryMedia)
 	cache.x1 = x1
 	cache.y1 = y1
 	cache.x2 = x2
@@ -266,7 +267,7 @@ func (c *ContentObj) AppendStreamOval(x1 float64, y1 float64, x2 float64, y2 flo
 // AppendStreamCurveBezierCubic : draw a curve from the current spot to the x and y position
 func (c *ContentObj) AppendStreamCurveBezierCubic(cx0, cy0, cx1, cy1, x, y float64) {
 	var cache cacheContentCurveBezierCubic
-	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.pageHeight = c.getRoot().GetBoundaryHeight(PageBoundaryMedia)
 	cache.cx0 = cx0
 	cache.cy0 = cy0
 	cache.cx1 = cx1
@@ -310,7 +311,7 @@ func (c *ContentObj) AppendStreamClipEnd() {
 //AppendStreamClipClipEllipse creates an Elliptical clipping path
 func (c *ContentObj) AppendStreamClipPolygon(points []Point, style string) {
 	var cache cacheContentClipPolygon
-	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.pageHeight = c.getRoot().GetBoundaryHeight(PageBoundaryMedia)
 	cache.points = points
 	cache.style = style
 
@@ -321,7 +322,7 @@ func (c *ContentObj) AppendStreamClipPolygon(points []Point, style string) {
 //AppendStreamClipClipEllipse creates an Elliptical clipping path
 func (c *ContentObj) AppendStreamClipEllipse(x, y, rx, ry float64, style string) {
 	var cache cacheContentClipEllipse
-	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.pageHeight = c.getRoot().GetBoundaryHeight(PageBoundaryMedia)
 	cache.x = x
 	cache.y = y
 	cache.rx = rx
@@ -335,7 +336,7 @@ func (c *ContentObj) AppendStreamClipEllipse(x, y, rx, ry float64, style string)
 //AppendStreamClipRoundedRect creates a rounded rectangle clipping path
 func (c *ContentObj) AppendStreamClipRoundedRect(x, y, w, h, r float64, style string) {
 	var cache cacheContentClipRoundedRect
-	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.pageHeight = c.getRoot().GetBoundaryHeight(PageBoundaryMedia)
 	cache.x = x
 	cache.y = y
 	cache.w = w
@@ -350,7 +351,7 @@ func (c *ContentObj) AppendStreamClipRoundedRect(x, y, w, h, r float64, style st
 //AppendStreamClipText creates a clipping path using the text
 func (c *ContentObj) AppendStreamClipText(x, y float64, txtStr string, style int) {
 	var cache cacheContentClipText
-	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.pageHeight = c.getRoot().GetBoundaryHeight(PageBoundaryMedia)
 	cache.x = x
 	cache.y = y
 	cache.txtStr = txtStr
@@ -363,7 +364,7 @@ func (c *ContentObj) AppendStreamClipText(x, y float64, txtStr string, style int
 //AppendStreamClipRect starts a rectangle clipping path
 func (c *ContentObj) AppendStreamClipRect(x, y, w, h float64, style string) {
 	var cache cacheContentClipRect
-	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.pageHeight = c.getRoot().GetBoundaryHeight(PageBoundaryMedia)
 	cache.x = x
 	cache.y = y
 	cache.w = w
@@ -463,14 +464,14 @@ func (c *ContentObj) AppendStreamSetCMYKColorFill(cy uint8, m uint8, y uint8, k 
 }
 
 //AppendStreamImage append image
-func (c *ContentObj) AppendStreamImage(id string, x float64, y float64, rect *Rect) {
+func (c *ContentObj) AppendStreamImage(id string, x float64, y float64, rect Rect) {
 	//fmt.Printf("index = %d",index)
-	h := c.getRoot().curr.pageSize.H
+	h := c.getRoot().GetBoundaryHeight(PageBoundaryMedia)
 	var cache cacheContentImage
 	cache.h = h
 	cache.x = x
 	cache.y = y
-	cache.rect = *rect
+	cache.rect = rect
 	cache.id = id
 	c.listCache.append(&cache)
 	//c.stream.WriteString(fmt.Sprintf("q %0.2f 0 0 %0.2f %0.2f %0.2f cm /I%d Do Q\n", rect.W, rect.H, x, h-(y+rect.H), index+1))
@@ -479,7 +480,7 @@ func (c *ContentObj) AppendStreamImage(id string, x float64, y float64, rect *Re
 func (c *ContentObj) appendRotate(angle, x, y float64) {
 	var cache cacheContentRotate
 	cache.isReset = false
-	cache.pageHeight = c.getRoot().curr.pageSize.H
+	cache.pageHeight = c.getRoot().GetBoundaryHeight(PageBoundaryMedia)
 	cache.angle = angle
 	cache.x = x
 	cache.y = y

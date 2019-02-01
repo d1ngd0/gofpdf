@@ -103,7 +103,7 @@ func (tpl *TemplateObj) getType() string {
 func (tpl *TemplateObj) ToTemplate() Template {
 	return &FpdfTpl{
 		corner:    Point{X: tpl.x, Y: tpl.y},
-		size:      &Rect{W: tpl.w, H: tpl.h},
+		size:      []Rect{Rect{W: tpl.w, H: tpl.h}},
 		bytes:     [][]byte{tpl.b},
 		fonts:     tpl.fonts,
 		images:    tpl.images,

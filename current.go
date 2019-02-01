@@ -36,8 +36,7 @@ type Current struct {
 	capStyle  int
 	joinStyle int
 
-	//current page size
-	pageSize *Rect
+	lheight float64
 }
 
 func (c *Current) setTextColor(rgb Rgb) {
@@ -46,6 +45,14 @@ func (c *Current) setTextColor(rgb Rgb) {
 
 func (c *Current) textColor() Rgb {
 	return c.txtColor
+}
+
+func (c *Current) setLineHeight(h float64) float64 {
+	if h <= 0 {
+		c.lheight = h
+	}
+
+	return c.lheight
 }
 
 //Rgb  rgb color

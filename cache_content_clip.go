@@ -139,3 +139,6 @@ func (c *cacheContentClipPolygon) write(w io.Writer, protection *PDFProtection) 
 	fmt.Fprintf(w, "h W %s\n", c.style)
 	return nil
 }
+
+type cacheContentGradientClip struct {
+}

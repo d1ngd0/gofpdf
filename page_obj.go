@@ -58,9 +58,7 @@ func (p *PageObj) write(w io.Writer, objID int) error {
 	me.buffer.WriteString("    >>\n")*/
 	//me.buffer.WriteString("  >>\n")
 	fmt.Fprintf(w, "  /Contents %s\n", p.Contents) //sample  Contents 8 0 R
-	if !p.pageOption.isEmpty() {
-		fmt.Fprintf(w, " /MediaBox [ 0 0 %0.2f %0.2f ]\n", p.pageOption.PageSize.W, p.pageOption.PageSize.H)
-	}
+	p.pageOption.writePageBoundaries(w)
 	io.WriteString(w, ">>\n")
 	return nil
 }

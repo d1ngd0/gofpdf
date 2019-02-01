@@ -30,7 +30,7 @@ import (
 // Template is an object that can be written to, then used and re-used any number of times within a document.
 type Template interface {
 	ID() string
-	Size() (Point, *Rect)
+	Size() (Point, Rect)
 	Bytes() []byte
 	Images() []ImageHolder
 	Fonts() []*TemplateFont
@@ -122,6 +122,7 @@ func newTpl(corner Point, config Config, fn TplFunc, copyFrom *Fpdf) (Template, 
 	var err error
 	contents := gp.getAllContent()
 	bytes := make([][]byte, len(contents))
+	sizes := make([]Rect, len(contents))
 	x := 0
 
 	for index, content := range contents {
@@ -129,12 +130,18 @@ func newTpl(corner Point, config Config, fn TplFunc, copyFrom *Fpdf) (Template, 
 		if err != nil {
 			return nil, err
 		}
+
+		page := gp.pdfObjs[content.pageIndex].(*PageObj)
+		if pb := page.pageOption.GetBoundary(PageBoundaryMedia); pb != nil {
+			gp.curr.IndexOfPageObj = content.pageIndex
+			sizes[x] = gp.GetBoundarySize(PageBoundaryMedia)
+		}
 		x++
 	}
 
 	fpdf := &FpdfTpl{
 		corner: corner,
-		size:   gp.config.PageSize,
+		size:   sizes,
 		bytes:  bytes,
 		page:   len(bytes) - 1,
 	}
@@ -154,7 +161,7 @@ func newTpl(corner Point, config Config, fn TplFunc, copyFrom *Fpdf) (Template, 
 // FpdfTpl is a concrete implementation of the Template interface.
 type FpdfTpl struct {
 	corner    Point
-	size      *Rect
+	size      []Rect
 	bytes     [][]byte
 	fonts     []*TemplateFont
 	images    []ImageHolder
@@ -168,8 +175,8 @@ func (t *FpdfTpl) ID() string {
 }
 
 // Size gives the bounding dimensions of this template
-func (t *FpdfTpl) Size() (corner Point, size *Rect) {
-	return t.corner, t.size
+func (t *FpdfTpl) Size() (corner Point, size Rect) {
+	return t.corner, t.size[t.page]
 }
 
 // Bytes returns the actual template data, not including resources

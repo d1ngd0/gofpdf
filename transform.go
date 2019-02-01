@@ -143,7 +143,7 @@ func (gp *Fpdf) TransformTranslate(tx, ty float64) {
 // The TransformBegin() example demonstrates this method.
 func (gp *Fpdf) TransformRotate(angle, x, y float64) {
 	gp.UnitsToPointsVar(&x, &y)
-	y = gp.curr.pageSize.H - y
+	y = gp.GetBoundaryHeight(PageBoundaryMedia) - y
 	angle = angle * math.Pi / 180
 	var tm TransformMatrix
 	tm.A = math.Cos(angle)
@@ -185,7 +185,7 @@ func (gp *Fpdf) TransformSkew(angleX, angleY, x, y float64) error {
 	}
 
 	gp.UnitsToPointsVar(&x, &y)
-	y = gp.curr.pageSize.H - y
+	y = gp.GetBoundaryHeight(PageBoundaryMedia) - y
 
 	var tm TransformMatrix
 	tm.A = 1

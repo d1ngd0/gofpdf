@@ -65,6 +65,78 @@ type Fpdf struct {
 	info      *PdfInfo
 }
 
+// Set a page boundary
+func (gp *Fpdf) SetPageBoundary(pb *PageBoundary) {
+	if page := gp.getCurrentPage(); page != nil {
+		page.pageOption.AddPageBoundary(pb)
+	}
+}
+
+func (gp *Fpdf) GetPageBoundary(t int) *PageBoundary {
+	if page := gp.getCurrentPage(); page != nil {
+		if boundary := page.pageOption.GetBoundary(t); boundary != nil {
+			return boundary
+		}
+	}
+
+	return gp.config.PageOption.GetBoundary(t)
+}
+
+func (gp *Fpdf) GetBoundarySize(t int) (rec Rect) {
+	if pb := gp.GetPageBoundary(t); pb != nil {
+		rec = pb.Size
+	}
+	return
+}
+
+func (gp *Fpdf) GetBoundaryPosition(t int) (p Point) {
+	if pb := gp.GetPageBoundary(t); pb != nil {
+		p = pb.Position
+	}
+	return
+}
+
+func (gp *Fpdf) GetBoundaryX(t int) float64 {
+	return gp.GetBoundaryPosition(t).X
+}
+
+func (gp *Fpdf) GetBoundaryY(t int) float64 {
+	return gp.GetBoundaryPosition(t).Y
+}
+
+func (gp *Fpdf) GetBoundaryWidth(t int) float64 {
+	return gp.GetBoundarySize(t).W
+}
+
+func (gp *Fpdf) GetBoundaryHeight(t int) float64 {
+	return gp.GetBoundarySize(t).H
+}
+
+func (gp *Fpdf) SetPageSize(w, h float64) {
+	pb := gp.NewPageSizeBoundary(w, h)
+	gp.SetPageBoundary(pb)
+}
+
+func (gp *Fpdf) SetCropBox(x, y, w, h float64) {
+	pb := gp.NewCropPageBoundary(x, y, w, h)
+	gp.SetPageBoundary(pb)
+}
+
+func (gp *Fpdf) SetBleedBox(x, y, w, h float64) {
+	pb := gp.NewBleedPageBoundary(x, y, w, h)
+	gp.SetPageBoundary(pb)
+}
+
+func (gp *Fpdf) SetTrimBox(x, y, w, h float64) {
+	pb := gp.NewTrimPageBoundary(x, y, w, h)
+	gp.SetPageBoundary(pb)
+}
+
+func (gp *Fpdf) SetArtBox(x, y, w, h float64) {
+	pb := gp.NewArtPageBoundary(x, y, w, h)
+	gp.SetPageBoundary(pb)
+}
+
 //SetLineWidth : set line width
 func (gp *Fpdf) SetLineWidth(width float64) {
 	gp.curr.lineWidth = gp.UnitsToPoints(width)
@@ -252,6 +324,27 @@ func (gp *Fpdf) DrawPath(styleStr string) {
 	gp.getContent().AppendStreamDrawPath(styleStr)
 }
 
+// Ln performs a line break. The current abscissa goes back to the left margin
+// and the ordinate increases by the amount passed in parameter.
+// This method is demonstrated in the example for MultiCell.
+func (gp *Fpdf) Ln(h float64) {
+	gp.ln(h, true)
+}
+
+func (gp *Fpdf) ln(h float64, toLeftMargin bool) {
+	gp.PointsToUnitsVar(&h)
+	if toLeftMargin {
+		gp.curr.X = gp.margins.Left
+	}
+
+	if gp.curr.Y+h > gp.bottomMarginHeight() {
+		page := gp.getCurrentPage()
+		gp.addPageWithOption(page.pageOption)
+	}
+
+	gp.curr.Y += gp.curr.setLineHeight(h)
+}
+
 // Circle draws a circle centered on point (x, y) with radius r.
 //
 // styleStr can be "F" for filled, "D" for outlined only, or "DF" or "FD" for
@@ -389,13 +482,6 @@ func (gp *Fpdf) Oval(x1 float64, y1 float64, x2 float64, y2 float64) {
 	gp.getContent().AppendStreamOval(x1, y1, x2, y2)
 }
 
-//Br : new line
-func (gp *Fpdf) Br(h float64) {
-	gp.UnitsToPointsVar(&h)
-	gp.curr.Y += h
-	gp.curr.X = gp.margins.Left
-}
-
 //SetGrayFill set the grayscale for the fill, takes a float64 between 0.0 and 1.0
 func (gp *Fpdf) SetGrayFill(grayScale float64) {
 	gp.curr.grayFill = grayScale
@@ -443,14 +529,14 @@ func (gp *Fpdf) SetXY(x, y float64) {
 }
 
 //ImageByHolder : draw image by ImageHolder
-func (gp *Fpdf) ImageByHolder(img ImageHolder, x float64, y float64, rect *Rect) error {
+func (gp *Fpdf) ImageByHolder(img ImageHolder, x float64, y float64, rect Rect) error {
 	gp.UnitsToPointsVar(&x, &y)
 	rect = rect.UnitsToPoints(gp.config.Unit)
 
 	return gp.imageByHolder(img, x, y, rect)
 }
 
-func (gp *Fpdf) imageByHolder(img ImageHolder, x float64, y float64, rect *Rect) error {
+func (gp *Fpdf) imageByHolder(img ImageHolder, x float64, y float64, rect Rect) error {
 	cacheImageIndex, err := gp.registerImageByHolder(img)
 	if err != nil {
 		return err
@@ -467,17 +553,13 @@ func (gp *Fpdf) CreateTemplate(fn TplFunc) (Template, error) {
 
 // CreateTemplateCustom starts a template, using the given bounds.
 func (gp *Fpdf) CreateTemplateCustom(corner Point, config Config, fn TplFunc) (Template, error) {
-	config.PageSize = config.PageSize.UnitsToPoints(gp.config.Unit)
 	corner = corner.ToPoints(gp.config.Unit)
-
 	return newTpl(corner, config, fn, gp)
 }
 
 // CreateTemplate creates a template that is not attached to any document.
 func CreateTemplate(corner Point, config Config, fn TplFunc) (Template, error) {
-	config.PageSize = config.PageSize.UnitsToPoints(config.Unit)
 	corner = corner.ToPoints(config.Unit)
-
 	return newTpl(corner, config, fn, nil)
 }
 
@@ -494,7 +576,7 @@ func (gp *Fpdf) UseTemplate(t Template) error {
 
 // UseTemplateScaled adds a template to the current page or another template,
 // using the given page coordinates.
-func (gp *Fpdf) UseTemplateScaled(t Template, corner Point, size *Rect) error {
+func (gp *Fpdf) UseTemplateScaled(t Template, corner Point, size Rect) error {
 	if t == nil {
 		return errors.New("template is nil")
 	}
@@ -610,7 +692,7 @@ func (gp *Fpdf) registerImageByHolder(img ImageHolder) (string, error) {
 }
 
 //Image : draw image
-func (gp *Fpdf) Image(picPath string, x float64, y float64, rect *Rect) error {
+func (gp *Fpdf) Image(picPath string, x float64, y float64, rect Rect) error {
 	gp.UnitsToPointsVar(&x, &y)
 	rect = rect.UnitsToPoints(gp.config.Unit)
 
@@ -622,7 +704,7 @@ func (gp *Fpdf) Image(picPath string, x float64, y float64, rect *Rect) error {
 }
 
 // ImageByReader adds an image to the pdf with a reader
-func (gp *Fpdf) ImageByReader(r io.Reader, x float64, y float64, rect *Rect) error {
+func (gp *Fpdf) ImageByReader(r io.Reader, x float64, y float64, rect Rect) error {
 	gp.UnitsToPointsVar(&x, &y)
 	rect = rect.UnitsToPoints(gp.config.Unit)
 
@@ -635,7 +717,7 @@ func (gp *Fpdf) ImageByReader(r io.Reader, x float64, y float64, rect *Rect) err
 }
 
 // ImageByURL adds an image to the pdf using the given url
-func (gp *Fpdf) ImageByURL(url string, x float64, y float64, rect *Rect) error {
+func (gp *Fpdf) ImageByURL(url string, x float64, y float64, rect Rect) error {
 	gp.UnitsToPointsVar(&x, &y)
 	rect = rect.UnitsToPoints(gp.config.Unit)
 
@@ -655,7 +737,6 @@ func (gp *Fpdf) AddPage() {
 
 //AddPageWithOption  : add new page with option
 func (gp *Fpdf) AddPageWithOption(opt PageOption) {
-	opt.PageSize = opt.PageSize.UnitsToPoints(gp.config.Unit)
 	gp.addPageWithOption(opt)
 }
 
@@ -665,12 +746,7 @@ func (gp *Fpdf) addPageWithOption(opt PageOption) {
 		return gp
 	})
 
-	if !opt.isEmpty() { //use page option
-		page.setOption(opt)
-		gp.curr.pageSize = opt.PageSize
-	} else { //use default
-		gp.curr.pageSize = gp.config.PageSize
-	}
+	page.setOption(gp.config.PageOption.merge(opt))
 
 	page.ResourcesRelate = strconv.Itoa(gp.indexOfProcSet+1) + " 0 R"
 	index := gp.addObj(page)
@@ -853,6 +929,16 @@ func (gp *Fpdf) Text(x, y float64, text string) error {
 	return nil
 }
 
+// WriteTextf is the same as WriteText but it uses fmt.Sprintf
+func (gp *Fpdf) WriteTextf(h float64, txtStr string, v ...interface{}) error {
+	return gp.WriteText(h, fmt.Sprintf(txtStr, v...))
+}
+
+// WriteTextOptsf is the same as WriteText but it uses fmt.Sprintf
+func (gp *Fpdf) WriteTextOptsf(h float64, txtStr string, opts CellOption, v ...interface{}) error {
+	return gp.WriteTextOpts(h, fmt.Sprintf(txtStr, v...), opts)
+}
+
 // WriteText prints text from the current position. When the right margin is
 // reached (or the \n character is met) a line break occurs and text continues
 // from the left margin. Upon method exit, the current position is left just at
@@ -917,6 +1003,7 @@ func (gp *Fpdf) MultiCell(w, h float64, txtStr string) error {
 // h indicates the line height of each cell in the unit of measure specified in New().
 func (gp *Fpdf) MultiCellOpts(w, h float64, txtStr string, opts CellOption) error {
 	gp.UnitsToPointsVar(&w, &h)
+	gp.curr.setLineHeight(h)
 
 	if w == 0 {
 		w = gp.rightMarginWidth(gp.curr.X)
@@ -927,11 +1014,11 @@ func (gp *Fpdf) MultiCellOpts(w, h float64, txtStr string, opts CellOption) erro
 		return err
 	}
 
-	rectangle := &Rect{W: w, H: h}
+	rectangle := Rect{W: w, H: h}
 
 	for x := 0; x < len(lines); x++ {
 		if gp.curr.Y+h > gp.bottomMarginHeight() {
-			page := gp.pdfObjs[gp.curr.IndexOfPageObj].(*PageObj)
+			page := gp.getCurrentPage()
 			gp.addPageWithOption(page.pageOption)
 		}
 
@@ -946,11 +1033,11 @@ func (gp *Fpdf) MultiCellOpts(w, h float64, txtStr string, opts CellOption) erro
 }
 
 func (gp *Fpdf) rightMarginWidth(leftOffset float64) float64 {
-	return gp.curr.pageSize.W - gp.margins.Right - leftOffset
+	return gp.GetBoundaryWidth(PageBoundaryMedia) - gp.margins.Right - leftOffset
 }
 
 func (gp *Fpdf) bottomMarginHeight() float64 {
-	return gp.curr.pageSize.H - gp.margins.Bottom
+	return gp.GetBoundaryHeight(PageBoundaryMedia) - gp.margins.Bottom
 }
 
 func (gp *Fpdf) splitLines(txt string, w float64) ([]string, error) {
@@ -1010,12 +1097,12 @@ func (gp *Fpdf) cutStringBefore(txtStr string, w float64) (line string, left str
 //CellWithOption create cell of text ( use current x,y is upper-left corner of cell)
 func (gp *Fpdf) CellWithOption(w, h float64, text string, opt CellOption) error {
 	gp.UnitsToPointsVar(&w, &h)
-	rectangle := &Rect{W: w, H: h}
+	rectangle := Rect{W: w, H: h}
 
 	return gp.cellWithOption(rectangle, text, opt)
 }
 
-func (gp *Fpdf) cellWithOption(rect *Rect, text string, opt CellOption) error {
+func (gp *Fpdf) cellWithOption(rect Rect, text string, opt CellOption) error {
 	err := gp.curr.Font_ISubset.AddChars(text)
 	if err != nil {
 		return err
@@ -1034,7 +1121,7 @@ func (gp *Fpdf) Cellf(w, h float64, text string, args ...interface{}) error {
 //Note that this has no effect on Rect.H pdf (now). Fix later :-)
 func (gp *Fpdf) Cell(w, h float64, text string) error {
 	gp.UnitsToPointsVar(&w, &h)
-	rectangle := &Rect{W: w, H: h}
+	rectangle := Rect{W: w, H: h}
 
 	defaultopt := CellOption{
 		Align:  Left | Top,
@@ -1048,18 +1135,18 @@ func (gp *Fpdf) Cell(w, h float64, text string) error {
 //AddLink
 func (gp *Fpdf) AddExternalLink(url string, x, y, w, h float64) {
 	gp.UnitsToPointsVar(&x, &y, &w, &h)
-	page := gp.pdfObjs[gp.curr.IndexOfPageObj].(*PageObj)
-	page.Links = append(page.Links, linkOption{x, gp.config.PageSize.H - y, w, h, url, ""})
+	page := gp.getCurrentPage()
+	page.Links = append(page.Links, linkOption{x, gp.GetBoundaryHeight(PageBoundaryMedia) - y, w, h, url, ""})
 }
 
 func (gp *Fpdf) AddInternalLink(anchor string, x, y, w, h float64) {
 	gp.UnitsToPointsVar(&x, &y, &w, &h)
-	page := gp.pdfObjs[gp.curr.IndexOfPageObj].(*PageObj)
-	page.Links = append(page.Links, linkOption{x, gp.config.PageSize.H - y, w, h, "", anchor})
+	page := gp.getCurrentPage()
+	page.Links = append(page.Links, linkOption{x, gp.GetBoundaryHeight(PageBoundaryMedia) - y, w, h, "", anchor})
 }
 
 func (gp *Fpdf) SetAnchor(name string) {
-	y := gp.config.PageSize.H - gp.curr.Y + float64(gp.curr.Font_Size)
+	y := gp.GetBoundaryHeight(PageBoundaryMedia) - gp.curr.Y + float64(gp.curr.Font_Size)
 	gp.anchors[name] = anchorOption{gp.curr.IndexOfPageObj, y}
 }
 
@@ -1297,9 +1384,6 @@ func (gp *Fpdf) init() {
 
 	// default to zlib.DefaultCompression
 	gp.compressLevel = zlib.DefaultCompression
-
-	// change the unit type
-	gp.config.PageSize = gp.config.PageSize.UnitsToPoints(gp.config.Unit)
 }
 
 func (gp *Fpdf) resetCurrXY() {
@@ -1453,6 +1537,7 @@ func (gp *Fpdf) getContent() *ContentObj {
 	var content *ContentObj
 	if gp.indexOfContent <= -1 {
 		content = new(ContentObj)
+		content.pageIndex = gp.curr.IndexOfPageObj
 		content.init(func() *Fpdf {
 			return gp
 		})
@@ -1475,6 +1560,15 @@ func (gp *Fpdf) getProcset() *ProcSetObj {
 		procset = gp.pdfObjs[gp.indexOfProcSet].(*ProcSetObj)
 	}
 	return procset
+}
+
+func (gp *Fpdf) getCurrentPage() *PageObj {
+	var page *PageObj
+	if gp.curr.IndexOfPageObj < 0 {
+		page = gp.pdfObjs[gp.curr.IndexOfPageObj].(*PageObj)
+	}
+
+	return page
 }
 
 func (gp *Fpdf) getAllContent() map[int]*ContentObj {

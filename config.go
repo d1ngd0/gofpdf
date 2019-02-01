@@ -15,10 +15,28 @@ const (
 	conversion_Unit_IN = 72.0
 )
 
+func NewConfig(unit int, rec Rect, p *PDFProtectionConfig, pb ...*PageBoundary) Config {
+	if p == nil {
+		p = new(PDFProtectionConfig)
+	}
+
+	c := Config{
+		Unit:       unit,
+		PageOption: PageOption{PageBoundaries: []*PageBoundary{NewPageSizeBoundary(unit, rec.W, rec.H)}},
+		Protection: *p,
+	}
+
+	for x := 0; x < len(pb); x++ {
+		c.PageOption.AddPageBoundary(pb[x])
+	}
+
+	return c
+}
+
 //Config static config
 type Config struct {
-	Unit       int                 // The unit type to use when composing the document.
-	PageSize   *Rect               // The default page size for all pages in the document
+	Unit       int // The unit type to use when composing the document.
+	PageOption PageOption
 	K          float64             // Not sure
 	Protection PDFProtectionConfig // Protection settings
 }
