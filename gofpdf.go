@@ -1521,12 +1521,11 @@ func (gp *Fpdf) getProcset() *ProcSetObj {
 }
 
 func (gp *Fpdf) getCurrentPage() *PageObj {
-	var page *PageObj
 	if gp.curr.IndexOfPageObj < 0 {
-		page = gp.pdfObjs[gp.curr.IndexOfPageObj].(*PageObj)
+		return nil
 	}
 
-	return page
+	return gp.pdfObjs[gp.curr.IndexOfPageObj].(*PageObj)
 }
 
 func (gp *Fpdf) getAllContent() map[int]*ContentObj {
