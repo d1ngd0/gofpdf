@@ -59,8 +59,6 @@ type Fpdf struct {
 	// content streams only
 	compressLevel int
 
-	//info
-	isUseInfo   bool
 	info        *PdfInfo
 	appliedOpts []PdfOption
 }
@@ -1337,12 +1335,6 @@ func (gp *Fpdf) SetProtection(permissions int, userPass []byte, ownerPass []byte
 	gp.pdfProtection.setProtection(permissions, userPass, ownerPass)
 }*/
 
-//SetInfo set Document Information Dictionary
-func (gp *Fpdf) SetInfo(info PdfInfo) {
-	gp.info = &info
-	gp.isUseInfo = true
-}
-
 //Rotate rotate text or image
 // angle is angle in degrees.
 // x, y is rotation center
@@ -1471,46 +1463,13 @@ func (gp *Fpdf) xref(w io.Writer, xrefbyteoffset int, linelens []int, i int) err
 		fmt.Fprintf(w, "/Encrypt %d 0 R\n", gp.encryptionObjID)
 		io.WriteString(w, "/ID [()()]\n")
 	}
-	if gp.isUseInfo {
-		gp.writeInfo(w)
-	}
+	gp.GetInfo().write(w)
 	io.WriteString(w, ">>\n")
 	io.WriteString(w, "startxref\n")
 	fmt.Fprintf(w, "%d", xrefbyteoffset)
 	io.WriteString(w, "\n%%EOF\n")
 
 	return nil
-}
-
-func (gp *Fpdf) writeInfo(w io.Writer) {
-	var zerotime time.Time
-	io.WriteString(w, "/Info <<\n")
-
-	if gp.info.Author != "" {
-		fmt.Fprintf(w, "/Author <FEFF%s>\n", encodeUtf8(gp.info.Author))
-	}
-
-	if gp.info.Title != "" {
-		fmt.Fprintf(w, "/Title <FEFF%s>\n", encodeUtf8(gp.info.Title))
-	}
-
-	if gp.info.Subject != "" {
-		fmt.Fprintf(w, "/Subject <FEFF%s>\n", encodeUtf8(gp.info.Subject))
-	}
-
-	if gp.info.Creator != "" {
-		fmt.Fprintf(w, "/Creator <FEFF%s>\n", encodeUtf8(gp.info.Creator))
-	}
-
-	if gp.info.Producer != "" {
-		fmt.Fprintf(w, "/Producer <FEFF%s>\n", encodeUtf8(gp.info.Producer))
-	}
-
-	if !zerotime.Equal(gp.info.CreationDate) {
-		fmt.Fprintf(w, "/CreationDate(D:%s)>>\n", infodate(gp.info.CreationDate))
-	}
-
-	io.WriteString(w, " >>\n")
 }
 
 //ปรับ xref ให้เป็น 10 หลัก
