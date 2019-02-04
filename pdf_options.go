@@ -142,3 +142,87 @@ func PdfOptionProtection(permissions int, userpass string, ownerpass string) Pdf
 		ownerpass:   []byte(ownerpass),
 	}
 }
+
+type titlePdfOption struct {
+	title string
+}
+
+func (t *titlePdfOption) apply(gp *Fpdf) error {
+	gp.SetTitle(t.title)
+	return nil
+}
+
+// PdfOptionTitle creates a PdfOption that sets the title of the document
+func PdfOptionTitle(title string) PdfOption {
+	return &titlePdfOption{title: title}
+}
+
+type subjectPdfOption struct {
+	subject string
+}
+
+func (t *subjectPdfOption) apply(gp *Fpdf) error {
+	gp.SetSubject(t.subject)
+	return nil
+}
+
+// PdfOptionSubject creates a PdfOption that sets the subject of the document
+func PdfOptionSubject(subject string) PdfOption {
+	return &subjectPdfOption{subject: subject}
+}
+
+type authorPdfOption struct {
+	author string
+}
+
+func (t *authorPdfOption) apply(gp *Fpdf) error {
+	gp.SetAuthor(t.author)
+	return nil
+}
+
+// PdfOptionAuthor creates a PdfOption that sets the author of the document
+func PdfOptionAuthor(author string) PdfOption {
+	return &authorPdfOption{author: author}
+}
+
+type keywordsPdfOption struct {
+	keywords string
+}
+
+func (t *keywordsPdfOption) apply(gp *Fpdf) error {
+	gp.SetKeywords(t.keywords)
+	return nil
+}
+
+// PdfOptionKeywords creates a PdfOption that sets the keywords of the document
+func PdfOptionKeywords(keywords string) PdfOption {
+	return &keywordsPdfOption{keywords: keywords}
+}
+
+type creatorPdfOption struct {
+	creator string
+}
+
+func (t *creatorPdfOption) apply(gp *Fpdf) error {
+	gp.SetCreator(t.creator)
+	return nil
+}
+
+// PdfOptionCreator creates a PdfOption that sets the creator of the document
+func PdfOptionCreator(creator string) PdfOption {
+	return &creatorPdfOption{creator: creator}
+}
+
+type producerPdfOption struct {
+	producer string
+}
+
+func (t *producerPdfOption) apply(gp *Fpdf) error {
+	gp.SetProducer(t.producer)
+	return nil
+}
+
+// PdfOptionProducer creates a PdfOption that sets the producer of the document
+func PdfOptionProducer(producer string) PdfOption {
+	return &producerPdfOption{producer: producer}
+}
