@@ -20,6 +20,16 @@ type PageOption struct {
 	PageBoundaries []*PageBoundary
 }
 
+func (gp *Fpdf) NewPageOption(w, h float64) *PageOption {
+	return NewPageOption(gp.curr.unit, w, h)
+}
+
+func NewPageOption(u int, w, h float64) (po *PageOption) {
+	po = new(PageOption)
+	po.AddPageBoundary(NewPageSizeBoundary(u, w, h))
+	return
+}
+
 func (po *PageOption) AddPageBoundary(pb *PageBoundary) {
 	for x := 0; x < len(po.PageBoundaries); x++ {
 		if po.PageBoundaries[x].Type == pb.Type {
