@@ -1073,7 +1073,7 @@ func (gp *Fpdf) cutStringBefore(txtStr string, w float64) (line string, left str
 
 	for y := 0; y < len(words); y++ {
 		var tw float64
-		tw, err = gp.MeasureTextWidth(fmt.Sprintf("%s%s", line, words[y]), Unit_PT)
+		tw, err = gp.measureTextWidth(fmt.Sprintf("%s%s", line, words[y]), Unit_PT)
 
 		if err != nil {
 			return
@@ -1289,7 +1289,11 @@ func (gp *Fpdf) SetCMYKFillColor(c, m, y, k uint8) {
 }
 
 //MeasureTextWidth : measure Width of text (use current font)
-func (gp *Fpdf) MeasureTextWidth(text string, units int) (float64, error) {
+func (gp *Fpdf) MeasureTextWidth(text string) (float64, error) {
+	return gp.measureTextWidth(text, gp.curr.unit)
+}
+
+func (gp *Fpdf) measureTextWidth(text string, units int) (float64, error) {
 	err := gp.curr.Font_ISubset.AddChars(text) //AddChars for create CharacterToGlyphIndex
 	if err != nil {
 		return 0, err
