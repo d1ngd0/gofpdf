@@ -494,8 +494,8 @@ func (c *ContentObj) appendRotateReset() {
 }
 
 //ContentObj_CalTextHeight calculate height of text
-func ContentObj_CalTextHeight(fontsize int) float64 {
-	return (float64(fontsize) * 0.7)
+func ContentObj_CalTextHeight(fontsize float64) float64 {
+	return fontsize * 0.7
 }
 
 // When setting colour and grayscales the value has to be between 0.00 and 1.00

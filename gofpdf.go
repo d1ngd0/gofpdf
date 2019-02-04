@@ -791,7 +791,7 @@ func New(opts ...PdfOption) (*Fpdf, error) {
 
 // SetFontWithStyle : set font style support Regular or Underline
 // for Bold|Italic should be loaded apropriate fonts with same styles defined
-func (gp *Fpdf) SetFontWithStyle(family string, style int, size int) error {
+func (gp *Fpdf) SetFontWithStyle(family string, style int, size float64) error {
 
 	found := false
 	i := 0
@@ -823,7 +823,7 @@ func (gp *Fpdf) SetFontWithStyle(family string, style int, size int) error {
 
 //SetFont : set font style support "" or "U"
 // for "B" and "I" should be loaded apropriate fonts with same styles defined
-func (gp *Fpdf) SetFont(family string, style string, size int) error {
+func (gp *Fpdf) SetFont(family string, style string, size float64) error {
 	return gp.SetFontWithStyle(family, getConvertedStyle(style), size)
 }
 

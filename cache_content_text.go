@@ -18,7 +18,7 @@ type cacheContentText struct {
 	textColor   Rgb
 	grayFill    float64
 	fontObjId   string //Curr.Font_FontCount+1
-	fontSize    int
+	fontSize    float64
 	fontStyle   int
 	setXCount   int //จำนวนครั้งที่ใช้ setX
 	x, y        float64
@@ -65,11 +65,11 @@ func convertTypoUnit(val float64, unitsPerEm uint, fontSize float64) float64 {
 }
 
 func (c *cacheContentText) calTypoAscender() float64 {
-	return convertTypoUnit(float64(c.fontSubset.ttfp.TypoAscender()), c.fontSubset.ttfp.UnitsPerEm(), float64(c.fontSize))
+	return convertTypoUnit(float64(c.fontSubset.ttfp.TypoAscender()), c.fontSubset.ttfp.UnitsPerEm(), c.fontSize)
 }
 
 func (c *cacheContentText) calTypoDescender() float64 {
-	return convertTypoUnit(float64(c.fontSubset.ttfp.TypoDescender()), c.fontSubset.ttfp.UnitsPerEm(), float64(c.fontSize))
+	return convertTypoUnit(float64(c.fontSubset.ttfp.TypoDescender()), c.fontSubset.ttfp.UnitsPerEm(), c.fontSize)
 }
 
 func (c *cacheContentText) calY() (float64, error) {
@@ -124,7 +124,7 @@ func (c *cacheContentText) write(w io.Writer, protection *PDFProtection) error {
 
 	io.WriteString(w, "BT\n")
 	fmt.Fprintf(w, "%0.2f %0.2f TD\n", x, y)
-	fmt.Fprintf(w, "/%s %d Tf\n", c.fontObjId, c.fontSize)
+	fmt.Fprintf(w, "/%s %0.2f Tf\n", c.fontObjId, c.fontSize)
 	// if !(r == 0 && g == 0 && b == 0) {
 	// 	rFloat := float64(r) * 0.00392156862745
 	// 	gFloat := float64(g) * 0.00392156862745
@@ -258,7 +258,7 @@ func (c *cacheContentText) createContent() (float64, float64, error) {
 	return cellWidthPdfUnit, cellHeightPdfUnit, nil
 }
 
-func createContent(f *SubsetFontObj, text string, fontSize int, rectangle *Rect) (float64, float64, float64, error) {
+func createContent(f *SubsetFontObj, text string, fontSize float64, rectangle *Rect) (float64, float64, float64, error) {
 
 	unitsPerEm := int(f.ttfp.UnitsPerEm())
 	var leftRune rune
@@ -291,15 +291,15 @@ func createContent(f *SubsetFontObj, text string, fontSize int, rectangle *Rect)
 	cellWidthPdfUnit := float64(0)
 	cellHeightPdfUnit := float64(0)
 	if rectangle == nil {
-		cellWidthPdfUnit = float64(sumWidth) * (float64(fontSize) / 1000.0)
-		typoAscender := convertTypoUnit(float64(f.ttfp.TypoAscender()), f.ttfp.UnitsPerEm(), float64(fontSize))
-		typoDescender := convertTypoUnit(float64(f.ttfp.TypoDescender()), f.ttfp.UnitsPerEm(), float64(fontSize))
+		cellWidthPdfUnit = float64(sumWidth) * (fontSize / 1000.0)
+		typoAscender := convertTypoUnit(float64(f.ttfp.TypoAscender()), f.ttfp.UnitsPerEm(), fontSize)
+		typoDescender := convertTypoUnit(float64(f.ttfp.TypoDescender()), f.ttfp.UnitsPerEm(), fontSize)
 		cellHeightPdfUnit = typoAscender - typoDescender
 	} else {
 		cellWidthPdfUnit = rectangle.W
 		cellHeightPdfUnit = rectangle.H
 	}
-	textWidthPdfUnit := float64(sumWidth) * (float64(fontSize) / 1000.0)
+	textWidthPdfUnit := float64(sumWidth) * (fontSize / 1000.0)
 	return cellWidthPdfUnit, cellHeightPdfUnit, textWidthPdfUnit, nil
 }
 
@@ -334,7 +334,7 @@ func (c *CacheContent) Setup(rectangle *Rect,
 	textColor Rgb,
 	grayFill float64,
 	fontObjId string, //Curr.Font_FontCount+1
-	fontSize int,
+	fontSize float64,
 	fontStyle int,
 	setXCount int, //จำนวนครั้งที่ใช้ setX
 	x, y float64,
