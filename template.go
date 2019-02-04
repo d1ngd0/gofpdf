@@ -309,7 +309,12 @@ func (t *FpdfTpl) GobDecode(buf []byte) error {
 	r := bytes.NewBuffer(buf)
 	decoder := gob.NewDecoder(r)
 
-	err := decoder.Decode(&t.templates)
+	tpls := make([]*FpdfTpl, 0)
+	err := decoder.Decode(&tpls)
+	t.templates = make([]Template, len(tpls))
+	for x := 0; x < len(t.templates); x++ {
+		t.templates[x] = Template(tpls[x])
+	}
 
 	var numImages int
 	if err == nil {
