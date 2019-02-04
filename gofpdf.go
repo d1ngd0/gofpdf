@@ -179,9 +179,9 @@ func (gp *Fpdf) SetLineType(linetype string) {
 }
 
 const (
-	CapStyleDefault = 0
-	CapStyleRound   = 1
-	CapStyleSquare  = 2
+	CapStyleDefault = iota
+	CapStyleRound
+	CapStyleSquare
 )
 
 // SetLineCapStyle defines the line cap style. styleStr should be "butt",
