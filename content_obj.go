@@ -493,11 +493,6 @@ func (c *ContentObj) appendRotateReset() {
 	c.listCache.append(&cache)
 }
 
-//ContentObj_CalTextHeight calculate height of text
-func ContentObj_CalTextHeight(fontsize float64) float64 {
-	return fontsize * 0.7
-}
-
 // When setting colour and grayscales the value has to be between 0.00 and 1.00
 // This function takes a float64 and returns 0.0 if it is less than 0.0 and 1.0 if it
 // is more than 1.0

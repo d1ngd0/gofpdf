@@ -237,8 +237,7 @@ func (c *cacheContentText) underline(w io.Writer, startX float64, startY float64
 	h := c.pageHeight()
 	ut := float64(c.fontSubset.GetUt())
 	up := float64(c.fontSubset.GetUp())
-	textH := ContentObj_CalTextHeight(c.fontSize)
-	arg3 := float64(h) - (float64(startY) - ((up / unitsPerEm) * float64(c.fontSize))) - textH
+	arg3 := float64(h) - (float64(startY) - ((up / unitsPerEm) * float64(c.fontSize))) - c.fontSize
 	arg4 := (ut / unitsPerEm) * float64(c.fontSize)
 	fmt.Fprintf(w, "%0.2f %0.2f %0.2f -%0.2f re f\n", startX, arg3, endX-startX, arg4)
 	//fmt.Printf("arg3=%f arg4=%f\n", arg3, arg4)
