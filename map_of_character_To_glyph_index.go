@@ -1,16 +1,31 @@
 package gofpdf
 
+type keyIndexMap map[rune]int
+
 //MapOfCharacterToGlyphIndex map of CharacterToGlyphIndex
 type MapOfCharacterToGlyphIndex struct {
-	keyIndexs map[rune]int //for search index in keys
+	keyIndexs keyIndexMap //for search index in keys
 	Keys      []rune
 	Vals      []uint
+}
+
+func (gi *MapOfCharacterToGlyphIndex) copy() *MapOfCharacterToGlyphIndex {
+	gi2 := new(MapOfCharacterToGlyphIndex)
+	copy(gi2.Keys, gi.Keys)
+	copy(gi2.Vals, gi.Vals)
+	gi2.keyIndexs = make(keyIndexMap)
+
+	for k, v := range gi.keyIndexs {
+		gi2.keyIndexs[k] = v
+	}
+
+	return gi2
 }
 
 //NewMapOfCharacterToGlyphIndex new CharacterToGlyphIndex
 func NewMapOfCharacterToGlyphIndex() *MapOfCharacterToGlyphIndex {
 	var m MapOfCharacterToGlyphIndex
-	m.keyIndexs = make(map[rune]int)
+	m.keyIndexs = make(keyIndexMap)
 	return &m
 }
 

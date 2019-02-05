@@ -383,7 +383,7 @@ func (gp *Fpdf) loadFontsFromFpdf(f *Fpdf) {
 }
 
 func (gp *Fpdf) loadFontFromFpdf(f *Fpdf, orig *SubsetFontObj) *SubsetFontObj {
-	subfont := *orig
+	subfont := orig.copy()
 	cidfont := new(CIDFontObj)
 	unicodemap := new(UnicodeMap)
 	subfontdesc := new(SubfontDescriptorObj)
@@ -394,23 +394,23 @@ func (gp *Fpdf) loadFontFromFpdf(f *Fpdf, orig *SubsetFontObj) *SubsetFontObj {
 	*subfontdesc = *f.pdfObjs[cidfont.indexObjSubfontDescriptor].(*SubfontDescriptorObj)
 	*pdfdic = *f.pdfObjs[subfontdesc.indexObjPdfDictionary].(*PdfDictionaryObj)
 
-	unicodemap.SetPtrToSubsetFontObj(&subfont)
+	unicodemap.SetPtrToSubsetFontObj(subfont)
 	unicodeindex := gp.addObj(unicodemap)
 
-	pdfdic.SetPtrToSubsetFontObj(&subfont)
+	pdfdic.SetPtrToSubsetFontObj(subfont)
 	pdfdicindex := gp.addObj(pdfdic)
 
-	subfontdesc.SetPtrToSubsetFontObj(&subfont)
+	subfontdesc.SetPtrToSubsetFontObj(subfont)
 	subfontdesc.SetIndexObjPdfDictionary(pdfdicindex)
 	subfontdescindex := gp.addObj(subfontdesc)
 
-	cidfont.SetPtrToSubsetFontObj(&subfont)
+	cidfont.SetPtrToSubsetFontObj(subfont)
 	cidfont.SetIndexObjSubfontDescriptor(subfontdescindex)
 	cidindex := gp.addObj(cidfont)
 
 	subfont.SetIndexObjCIDFont(cidindex)
 	subfont.SetIndexObjUnicodeMap(unicodeindex)
-	index := gp.addObj(&subfont) //add หลังสุด
+	index := gp.addObj(subfont) //add หลังสุด
 	id := subfont.procsetIdentifier()
 
 	procset := gp.getProcset()
@@ -418,5 +418,5 @@ func (gp *Fpdf) loadFontFromFpdf(f *Fpdf, orig *SubsetFontObj) *SubsetFontObj {
 		procset.Realtes = append(procset.Realtes, RelateFont{Family: subfont.Family, IndexOfObj: index, IdOfObj: id, Style: subfont.ttfFontOption.Style &^ Underline})
 	}
 
-	return &subfont
+	return subfont
 }

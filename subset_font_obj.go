@@ -3,6 +3,7 @@ package gofpdf
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"io"
 
@@ -23,6 +24,15 @@ type SubsetFontObj struct {
 	indexObjUnicodeMap    int
 	ttfFontOption         TtfOption
 	funcKernOverride      FuncKernOverride
+	characterMutex        sync.RWMutex
+}
+
+func (s *SubsetFontObj) copy() *SubsetFontObj {
+	subFont := *s
+	s.characterMutex.RLock()
+	subFont.CharacterToGlyphIndex = subFont.CharacterToGlyphIndex.copy()
+	s.characterMutex.RUnlock()
+	return &subFont
 }
 
 func (s *SubsetFontObj) init(funcGetRoot func() *Fpdf) {
@@ -116,6 +126,9 @@ func (s *SubsetFontObj) SetTTFByReader(rd io.Reader) error {
 
 //AddChars add char to map CharacterToGlyphIndex
 func (s *SubsetFontObj) AddChars(txt string) error {
+	s.characterMutex.Lock()
+	defer s.characterMutex.Unlock()
+
 	for _, runeValue := range txt {
 		if s.CharacterToGlyphIndex.KeyExists(runeValue) {
 			continue
@@ -131,12 +144,9 @@ func (s *SubsetFontObj) AddChars(txt string) error {
 
 //CharIndex index of char in glyph table
 func (s *SubsetFontObj) CharIndex(r rune) (uint, error) {
-	/*
-		if index, ok := s.CharacterToGlyphIndex[r]; ok {
-			return index, nil
-		}
-		return 0, ErrCharNotFound
-	*/
+	s.characterMutex.RLock()
+	defer s.characterMutex.RUnlock()
+
 	glyIndex, ok := s.CharacterToGlyphIndex.Val(r)
 	if ok {
 		return glyIndex, nil
@@ -146,11 +156,9 @@ func (s *SubsetFontObj) CharIndex(r rune) (uint, error) {
 
 //CharWidth with of char
 func (s *SubsetFontObj) CharWidth(r rune) (uint, error) {
-	/*glyphIndex := s.CharacterToGlyphIndex
-	if index, ok := glyphIndex[r]; ok {
-		return s.GlyphIndexToPdfWidth(index), nil
-	}
-	return 0, ErrCharNotFound*/
+	s.characterMutex.RLock()
+	defer s.characterMutex.RUnlock()
+
 	glyIndex, ok := s.CharacterToGlyphIndex.Val(r)
 	if ok {
 		return s.GlyphIndexToPdfWidth(glyIndex), nil
@@ -272,6 +280,9 @@ func (s *SubsetFontObj) procsetIdentifier() string {
 
 // ToTemplateFont turns the subsetFontObject into a Template Font
 func (s *SubsetFontObj) ToTemplateFont() *TemplateFont {
+	s.characterMutex.RLock()
+	defer s.characterMutex.RUnlock()
+
 	return &TemplateFont{
 		id:         s.ttfp.Hash(),
 		procsetId:  s.procsetIdentifier(),
