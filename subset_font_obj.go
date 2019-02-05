@@ -257,6 +257,12 @@ func (s *SubsetFontObj) GetUp() int {
 }
 
 func (s *SubsetFontObj) procsetIdentifier() string {
+	// in the event we are calling on an empty font object
+	// return nothing
+	if s == nil {
+		return ""
+	}
+
 	if s.procsetid == "" {
 		s.procsetid = fmt.Sprintf("F%s", s.ttfp.Hash())
 	}
