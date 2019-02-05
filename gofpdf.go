@@ -576,6 +576,9 @@ func (gp *Fpdf) UseTemplate(t Template) error {
 // UseTemplateScaled adds a template to the current page or another template,
 // using the given page coordinates.
 func (gp *Fpdf) UseTemplateScaled(t Template, corner Point, size Rect) error {
+	corner = corner.ToPoints(gp.curr.unit)
+	size = size.UnitsToPoints(gp.curr.unit)
+
 	if t == nil {
 		return errors.New("template is nil")
 	}
