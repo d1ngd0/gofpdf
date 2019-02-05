@@ -733,8 +733,17 @@ func (gp *Fpdf) ImageByURL(url string, x float64, y float64, rect Rect) error {
 
 //AddPage : add new page
 func (gp *Fpdf) AddPage() {
-	emptyOpt := PageOption{}
-	gp.AddPageWithOption(emptyOpt)
+	var po PageOption
+
+	if !gp.curr.pageOption.IsEmpty() {
+		po = gp.curr.pageOption
+	}
+
+	if cp := gp.getCurrentPage(); cp != nil && !cp.pageOption.IsEmpty() {
+		po = cp.pageOption
+	}
+
+	gp.AddPageWithOption(po)
 }
 
 //AddPageWithOption  : add new page with option

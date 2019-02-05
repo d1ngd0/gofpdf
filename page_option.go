@@ -20,6 +20,10 @@ type PageOption struct {
 	PageBoundaries []*PageBoundary
 }
 
+func (po *PageOption) IsEmpty() bool {
+	return len(po.PageBoundaries) == 0
+}
+
 func (gp *Fpdf) NewPageOption(w, h float64) *PageOption {
 	return NewPageOption(gp.curr.unit, w, h)
 }
