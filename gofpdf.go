@@ -552,6 +552,7 @@ func (gp *Fpdf) CreateTemplate(fn TplFunc) (Template, error) {
 // CreateTemplateCustom starts a template, using the given bounds.
 func (gp *Fpdf) CreateTemplateCustom(corner Point, fn TplFunc, opts ...PdfOption) (Template, error) {
 	corner = corner.ToPoints(gp.curr.unit)
+	opts = append(gp.appliedOpts, opts...)
 	return newTpl(corner, opts, fn, gp)
 }
 
