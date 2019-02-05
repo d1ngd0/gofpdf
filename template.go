@@ -359,6 +359,7 @@ func (gp *Fpdf) loadParamsFromFpdf(f *Fpdf) {
 
 	gp.curr.X = f.curr.X
 	gp.curr.Y = f.curr.Y
+	gp.curr.unit = f.curr.unit
 	gp.SetLineWidth(f.curr.lineWidth)
 	gp.SetLineCapStyle(f.curr.capStyle)
 	gp.SetLineJoinStyle(f.curr.joinStyle)
