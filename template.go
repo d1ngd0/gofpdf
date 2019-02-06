@@ -32,7 +32,7 @@ type Template interface {
 	ID() string
 	Size() (Point, Rect)
 	Bytes() []byte
-	Images() []ImageHolder
+	Images() []*TemplateImage
 	Fonts() []*TemplateFont
 	Templates() []Template
 	NumPages() int
@@ -62,12 +62,55 @@ type TemplateFont struct {
 	characters string
 }
 
-func (t *TemplateFont) Read(p []byte) (n int, err error) {
-	if t.bbuffer == nil {
-		t.bbuffer = bytes.NewBuffer(t.b)
+func NewTemplateImageFromReader(id string, r io.Reader) (*TemplateImage, error) {
+	b, err := ioutil.ReadAll(r)
+	return NewTemplateImage(id, b), err
+}
+
+func NewTemplateImage(id string, b []byte) *TemplateImage {
+	return &TemplateImage{
+		id: id,
+		b:  b,
+	}
+}
+
+type TemplateImage struct {
+	id string
+	b  []byte
+}
+
+// GobEncode encodes the receiving template into a byte buffer. Use GobDecode
+// to decode the byte buffer back to a template.
+func (t *TemplateImage) GobEncode() ([]byte, error) {
+	var err error
+	w := new(bytes.Buffer)
+	encoder := gob.NewEncoder(w)
+	encodeMe := []interface{}{t.id, t.b}
+
+	for x := 0; x < len(encodeMe); x++ {
+		if err == nil {
+			err = encoder.Encode(encodeMe[x])
+		}
 	}
 
-	return t.bbuffer.Read(p)
+	return w.Bytes(), err
+}
+
+// GobDecode decodes the specified byte buffer into the receiving template.
+func (t *TemplateImage) GobDecode(buf []byte) error {
+	var err error
+	r := bytes.NewBuffer(buf)
+	decoder := gob.NewDecoder(r)
+
+	decodeMe := []interface{}{&t.id, &t.b}
+
+	for x := 0; x < len(decodeMe); x++ {
+		if err == nil {
+			err = decoder.Decode(decodeMe[x])
+		}
+	}
+
+	return err
 }
 
 // GobEncode encodes the receiving template into a byte buffer. Use GobDecode
@@ -166,7 +209,7 @@ type FpdfTpl struct {
 	size      []Rect
 	bytes     [][]byte
 	fonts     []*TemplateFont
-	images    []ImageHolder
+	images    []*TemplateImage
 	templates []Template
 	page      int
 }
@@ -223,7 +266,7 @@ func (t *FpdfTpl) FromPages() []Template {
 }
 
 // Images returns a list of the images used in this template
-func (t *FpdfTpl) Images() []ImageHolder {
+func (t *FpdfTpl) Images() []*TemplateImage {
 	return t.images
 }
 
@@ -271,20 +314,8 @@ func (t *FpdfTpl) GobEncode() ([]byte, error) {
 	err := encoder.Encode(t.templates)
 
 	if err == nil {
-		err = encoder.Encode(len(t.images))
+		err = encoder.Encode(t.images)
 	}
-
-	for x := 0; x < len(t.images); x++ {
-		if err == nil {
-			var b []byte
-			b, err = ioutil.ReadAll(t.images[x])
-
-			if err == nil {
-				err = encoder.Encode(b)
-			}
-		}
-	}
-
 	if err == nil {
 		err = encoder.Encode(t.fonts)
 	}
@@ -316,25 +347,9 @@ func (t *FpdfTpl) GobDecode(buf []byte) error {
 		t.templates[x] = Template(tpls[x])
 	}
 
-	var numImages int
 	if err == nil {
-		err = decoder.Decode(&numImages)
+		err = decoder.Decode(&t.images)
 	}
-	t.images = make([]ImageHolder, numImages)
-
-	if err == nil {
-		for x := 0; x < numImages; x++ {
-			var b []byte
-			err = decoder.Decode(&b)
-
-			if err == nil {
-				var ih ImageHolder
-				ih, err = ImageHolderByBytes(b)
-				t.images[x] = ih
-			}
-		}
-	}
-
 	if err == nil {
 		err = decoder.Decode(&t.fonts)
 	}

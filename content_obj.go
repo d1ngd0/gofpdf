@@ -1,6 +1,7 @@
 package gofpdf
 
 import (
+	"bytes"
 	"compress/zlib"
 	"fmt"
 	"io"
@@ -23,8 +24,7 @@ func (c *ContentObj) init(funcGetRoot func() *Fpdf) {
 }
 
 func (c *ContentObj) bytes(objID int) ([]byte, error) {
-	buff := GetBuffer()
-	defer PutBuffer(buff)
+	buff := new(bytes.Buffer)
 	err := c.listCache.write(buff, c.protection())
 	return buff.Bytes(), err
 }

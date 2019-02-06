@@ -570,7 +570,7 @@ func (gp *Fpdf) UseTemplate(t Template) error {
 	}
 
 	corner, size := t.Size()
-	return gp.UseTemplateScaled(t, corner, size)
+	return gp.useTemplateScaled(t, corner, size)
 }
 
 // UseTemplateScaled adds a template to the current page or another template,
@@ -579,6 +579,10 @@ func (gp *Fpdf) UseTemplateScaled(t Template, corner Point, size Rect) error {
 	corner = corner.ToPoints(gp.curr.unit)
 	size = size.UnitsToPoints(gp.curr.unit)
 
+	return gp.useTemplateScaled(t, corner, size)
+}
+
+func (gp *Fpdf) useTemplateScaled(t Template, corner Point, size Rect) error {
 	if t == nil {
 		return errors.New("template is nil")
 	}
@@ -592,14 +596,20 @@ func (gp *Fpdf) UseTemplateScaled(t Template, corner Point, size Rect) error {
 
 	imgs := t.Images()
 	for x := 0; x < len(imgs); x++ {
-		if _, err := gp.registerImageByHolder(imgs[x]); err != nil {
+		imgHolder, err := ImageHolderByBytes(imgs[x].b)
+		if err != nil {
+			return err
+		}
+
+		if _, err := gp.registerImageByHolder(imgHolder); err != nil {
 			return err
 		}
 	}
 
 	fonts := t.Fonts()
 	for x := 0; x < len(fonts); x++ {
-		if err := gp.AddTTFFontByReaderWithOption(fonts[x].family, fonts[x], fonts[x].option); err != nil {
+		b := bytes.NewBuffer(fonts[x].b)
+		if err := gp.AddTTFFontByReaderWithOption(fonts[x].family, b, fonts[x].option); err != nil {
 			return err
 		}
 
@@ -1552,12 +1562,12 @@ func (gp *Fpdf) getAllContent() map[int]*ContentObj {
 	return cos
 }
 
-func (gp *Fpdf) getImageHolders() ([]ImageHolder, error) {
-	ios := make([]ImageHolder, 0)
+func (gp *Fpdf) getImageHolders() ([]*TemplateImage, error) {
+	ios := make([]*TemplateImage, 0)
 	for x := 0; x < len(gp.pdfObjs); x++ {
 		if img, ok := gp.pdfObjs[x].(*ImageObj); ok {
 			img.rawImgReader.Seek(0, 0)
-			img, err := newImageBuffByReader(img.rawImgReader)
+			img, err := NewTemplateImageFromReader(img.imageid, img.rawImgReader)
 			if err != nil {
 				return ios, err
 			}

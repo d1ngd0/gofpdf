@@ -11,7 +11,7 @@ type TemplateObj struct {
 
 	pdfProtection *PDFProtection
 	getRoot       func() *Fpdf
-	images        []ImageHolder
+	images        []*TemplateImage
 	fonts         []*TemplateFont
 	templates     []Template
 	x, y          float64
@@ -67,7 +67,7 @@ func (tpl *TemplateObj) write(w io.Writer, objID int) error {
 	if len(tpl.images) > 0 { //|| len(tTemplates) > 0 {
 		io.WriteString(w, "/XObject <<\n")
 		for x := 0; x < len(tpl.images); x++ {
-			id := fmt.Sprintf("I%s", tpl.images[x].ID())
+			id := fmt.Sprintf("I%s", tpl.images[x].id)
 			fmt.Fprintf(w, "/%s %d 0 R\n", id, tpl.getProcsetIndex(id, false)+1)
 		}
 		for x := 0; x < len(tpl.templates); x++ {
