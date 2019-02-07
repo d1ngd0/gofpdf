@@ -596,12 +596,7 @@ func (gp *Fpdf) useTemplateScaled(t Template, corner Point, size Rect) error {
 
 	imgs := t.Images()
 	for x := 0; x < len(imgs); x++ {
-		imgHolder, err := ImageHolderByBytes(imgs[x].b)
-		if err != nil {
-			return err
-		}
-
-		if _, err := gp.registerImageByHolder(imgHolder); err != nil {
+		if _, err := gp.registerImageByImageObj(imgs[x].image); err != nil {
 			return err
 		}
 	}
@@ -661,15 +656,25 @@ func (gp *Fpdf) registerImageByHolder(img ImageHolder) (string, error) {
 	imgobj, err := NewImageObj(img, gp.protection(), func() *Fpdf {
 		return gp
 	})
-	id := imgobj.procsetIdentifier()
 
 	if err != nil {
 		return "", err
 	}
 
+	return gp.registerImageByImageObj(imgobj)
+}
+
+func (gp *Fpdf) registerImageByImageObj(imgobj *ImageObj) (string, error) {
+	id := imgobj.procsetIdentifier()
 	if gp.hasProcsetIndex(id, false) {
 		return id, nil
 	}
+
+	// sanity check that these exist, they are removed on serialization
+	imgobj.getRoot = func() *Fpdf {
+		return gp
+	}
+	imgobj.setProtection(gp.protection())
 
 	index := gp.addObj(imgobj)
 
@@ -1562,24 +1567,19 @@ func (gp *Fpdf) getAllContent() map[int]*ContentObj {
 	return cos
 }
 
-func (gp *Fpdf) getImageHolders() ([]*TemplateImage, error) {
+func (gp *Fpdf) getTemplateImages() []*TemplateImage {
 	ios := make([]*TemplateImage, 0)
 	for x := 0; x < len(gp.pdfObjs); x++ {
 		if img, ok := gp.pdfObjs[x].(*ImageObj); ok {
-			img.rawImgReader.Seek(0, 0)
-			img, err := NewTemplateImageFromReader(img.imageid, img.rawImgReader)
-			if err != nil {
-				return ios, err
-			}
-
-			ios = append(ios, img)
+			timg := NewTemplateImage(img)
+			ios = append(ios, timg)
 		}
 	}
 
-	return ios, nil
+	return ios
 }
 
-func (gp *Fpdf) getTemplateFonts() ([]*TemplateFont, error) {
+func (gp *Fpdf) getTemplateFonts() []*TemplateFont {
 	tfs := make([]*TemplateFont, 0)
 
 	for x := 0; x < len(gp.pdfObjs); x++ {
@@ -1588,7 +1588,7 @@ func (gp *Fpdf) getTemplateFonts() ([]*TemplateFont, error) {
 		}
 	}
 
-	return tfs, nil
+	return tfs
 }
 
 func (gp *Fpdf) getTemplates() ([]Template, error) {

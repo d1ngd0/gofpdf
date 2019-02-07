@@ -10,6 +10,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+
+	"github.com/jung-kurt/gofpdf/geh"
 )
 
 //ImageObj image object
@@ -22,6 +24,26 @@ type ImageObj struct {
 	procsetid     string
 	imageid       string
 	getRoot       func() *Fpdf
+}
+
+func (s *ImageObj) GobEncode() ([]byte, error) {
+	s.rawImgReader.Seek(0, 0)
+	b, err := ioutil.ReadAll(s.rawImgReader)
+	if err != nil {
+		return make([]byte, 0), err
+	}
+
+	return geh.EncodeMany(b, s.imginfo, s.procsetid, s.imageid)
+}
+
+func (s *ImageObj) GobDecode(buf []byte) error {
+	var b []byte
+	if err := geh.DecodeMany(buf, &b, &s.imginfo, &s.procsetid, &s.imageid); err != nil {
+		return err
+	}
+
+	s.rawImgReader = bytes.NewReader(b)
+	return nil
 }
 
 func NewImageObj(img ImageHolder, pro *PDFProtection, funcGetRoot func() *Fpdf) (*ImageObj, error) {

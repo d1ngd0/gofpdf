@@ -23,8 +23,6 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 
 	"github.com/jung-kurt/gofpdf/geh"
 )
@@ -66,32 +64,25 @@ func (t *TemplateFont) GobDecode(buf []byte) error {
 	return geh.DecodeMany(buf, &t.subsetFont)
 }
 
-func NewTemplateImageFromReader(id string, r io.Reader) (*TemplateImage, error) {
-	b, err := ioutil.ReadAll(r)
-	return NewTemplateImage(id, b), err
-}
-
-func NewTemplateImage(id string, b []byte) *TemplateImage {
+func NewTemplateImage(img *ImageObj) *TemplateImage {
 	return &TemplateImage{
-		id: id,
-		b:  b,
+		image: img,
 	}
 }
 
 type TemplateImage struct {
-	id string
-	b  []byte
+	image *ImageObj
 }
 
 // GobEncode encodes the receiving template into a byte buffer. Use GobDecode
 // to decode the byte buffer back to a template.
 func (t *TemplateImage) GobEncode() ([]byte, error) {
-	return geh.EncodeMany(t.id, t.b)
+	return geh.EncodeMany(t.image)
 }
 
 // GobDecode decodes the specified byte buffer into the receiving template.
 func (t *TemplateImage) GobDecode(buf []byte) error {
-	return geh.DecodeMany(buf, &t.id, &t.b)
+	return geh.DecodeMany(buf, &t.image)
 }
 
 type TplFunc func(*Fpdf) error
@@ -138,14 +129,8 @@ func newTpl(corner Point, opts []PdfOption, fn TplFunc, copyFrom *Fpdf) (Templat
 		page:   len(bytes) - 1,
 	}
 
-	if fpdf.fonts, err = gp.getTemplateFonts(); err != nil {
-		return nil, err
-	}
-
-	if fpdf.images, err = gp.getImageHolders(); err != nil {
-		return nil, err
-	}
-
+	fpdf.fonts = gp.getTemplateFonts()
+	fpdf.images = gp.getTemplateImages()
 	fpdf.templates, err = gp.getTemplates()
 	return fpdf, err
 }
