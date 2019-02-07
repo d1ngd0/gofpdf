@@ -1,5 +1,7 @@
 package gofpdf
 
+import "github.com/jung-kurt/gofpdf/geh"
+
 type keyIndexMap map[rune]int
 
 //MapOfCharacterToGlyphIndex map of CharacterToGlyphIndex
@@ -7,6 +9,14 @@ type MapOfCharacterToGlyphIndex struct {
 	keyIndexs keyIndexMap //for search index in keys
 	Keys      []rune
 	Vals      []uint
+}
+
+func (s *MapOfCharacterToGlyphIndex) GobEncode() ([]byte, error) {
+	return geh.EncodeMany(s.keyIndexs, s.Keys, s.Vals)
+}
+
+func (s *MapOfCharacterToGlyphIndex) GobDecode(buf []byte) error {
+	return geh.DecodeMany(buf, &s.keyIndexs, &s.Keys, &s.Vals)
 }
 
 func (gi *MapOfCharacterToGlyphIndex) copy() *MapOfCharacterToGlyphIndex {

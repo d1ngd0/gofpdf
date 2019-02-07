@@ -59,7 +59,7 @@ func (tpl *TemplateObj) write(w io.Writer, objID int) error {
 
 	io.WriteString(w, "/Font <<\n")
 	for x := 0; x < len(tpl.fonts); x++ {
-		id := fmt.Sprintf("F%s", tpl.fonts[x].id)
+		id := tpl.fonts[x].subsetFont.procsetIdentifier()
 		fmt.Fprintf(w, "/%s %d 0 R\n", id, tpl.getProcsetIndex(id, true)+1)
 	}
 	io.WriteString(w, ">>\n")

@@ -608,13 +608,9 @@ func (gp *Fpdf) useTemplateScaled(t Template, corner Point, size Rect) error {
 
 	fonts := t.Fonts()
 	for x := 0; x < len(fonts); x++ {
-		b := bytes.NewBuffer(fonts[x].b)
-		if err := gp.AddTTFFontByReaderWithOption(fonts[x].family, b, fonts[x].option); err != nil {
+		if err := gp.AddTTFFontBySubsetFont(fonts[x].subsetFont); err != nil {
 			return err
 		}
-
-		subsetFont := gp.pdfObjs[gp.getProcsetIndex(fonts[x].procsetId, true)].(*SubsetFontObj)
-		subsetFont.AddChars(fonts[x].characters)
 	}
 
 	id, err := gp.registerTpl(t)
@@ -1192,6 +1188,10 @@ func (gp *Fpdf) AddTTFFontByReaderWithOption(family string, rd io.Reader, option
 		return err
 	}
 
+	return gp.AddTTFFontBySubsetFont(subsetFont)
+}
+
+func (gp *Fpdf) AddTTFFontBySubsetFont(subsetFont *SubsetFontObj) error {
 	id := subsetFont.procsetIdentifier()
 	// font already exists, so lets skip it
 	if gp.hasProcsetIndex(id, true) {
@@ -1235,8 +1235,8 @@ func (gp *Fpdf) AddTTFFontByReaderWithOption(family string, rd io.Reader, option
 	index := gp.addObj(subsetFont) //add หลังสุด
 
 	procset := gp.getProcset()
-	if !procset.Realtes.IsContainsFamilyAndStyle(family, option.Style&^Underline) {
-		procset.Realtes = append(procset.Realtes, RelateFont{Family: family, IndexOfObj: index, IdOfObj: id, Style: option.Style &^ Underline})
+	if !procset.Realtes.IsContainsFamilyAndStyle(subsetFont.Family, subsetFont.ttfFontOption.Style&^Underline) {
+		procset.Realtes = append(procset.Realtes, RelateFont{Family: subsetFont.Family, IndexOfObj: index, IdOfObj: id, Style: subsetFont.ttfFontOption.Style &^ Underline})
 		subsetFont.CountOfFont = gp.curr.CountOfFont
 	}
 	return nil

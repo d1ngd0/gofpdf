@@ -14,6 +14,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/jung-kurt/gofpdf/geh"
 )
 
 var ERROR_NO_UNICODE_ENCODING_FOUND = errors.New("No Unicode encoding found")
@@ -80,6 +82,20 @@ type TTFParser struct {
 	//kerning
 	useKerning bool //user config for use or not use kerning
 	kern       *KernTable
+}
+
+func (t TTFParser) GobEncode() ([]byte, error) {
+	kt := t.kern
+	if kt == nil {
+		kt = new(KernTable)
+	}
+
+	return geh.EncodeMany(t.tables, t.unitsPerEm, t.xMin, t.yMin, t.xMax, t.yMax, t.indexToLocFormat, t.numberOfHMetrics, t.ascender, t.descender, t.numGlyphs, t.widths, t.chars, t.postScriptName, t.os2Version, t.Embeddable, t.Bold, t.typoAscender, t.typoDescender, t.capHeight, t.sxHeight, t.italicAngle, t.underlinePosition, t.underlineThickness, t.isFixedPitch, t.sTypoLineGap, t.usWinAscent, t.usWinDescent, t.IsShortIndex, t.LocaTable, t.SegCount, t.StartCount, t.EndCount, t.IdRangeOffset, t.IdDelta, t.GlyphIdArray, t.symbol, t.groupingTables, t.cacheFontData, t.useKerning, kt)
+}
+
+// GobDecode decodes the specified byte buffer into the receiving template.
+func (t *TTFParser) GobDecode(buf []byte) error {
+	return geh.DecodeMany(buf, &t.tables, &t.unitsPerEm, &t.xMin, &t.yMin, &t.xMax, &t.yMax, &t.indexToLocFormat, &t.numberOfHMetrics, &t.ascender, &t.descender, &t.numGlyphs, &t.widths, &t.chars, &t.postScriptName, &t.os2Version, &t.Embeddable, &t.Bold, &t.typoAscender, &t.typoDescender, &t.capHeight, &t.sxHeight, &t.italicAngle, &t.underlinePosition, &t.underlineThickness, &t.isFixedPitch, &t.sTypoLineGap, &t.usWinAscent, &t.usWinDescent, &t.IsShortIndex, &t.LocaTable, &t.SegCount, &t.StartCount, &t.EndCount, &t.IdRangeOffset, &t.IdDelta, &t.GlyphIdArray, &t.symbol, &t.groupingTables, &t.cacheFontData, &t.useKerning, &t.kern)
 }
 
 var Symbolic = 1 << 2

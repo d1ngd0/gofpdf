@@ -8,6 +8,7 @@ import (
 	"io"
 
 	"github.com/jung-kurt/gofpdf/fontmaker/core"
+	"github.com/jung-kurt/gofpdf/geh"
 )
 
 //ErrCharNotFound char not found
@@ -25,6 +26,14 @@ type SubsetFontObj struct {
 	ttfFontOption         TtfOption
 	funcKernOverride      FuncKernOverride
 	characterMutex        sync.RWMutex
+}
+
+func (s *SubsetFontObj) GobEncode() ([]byte, error) {
+	return geh.EncodeMany(s.ttfp, s.procsetid, s.Family, s.CharacterToGlyphIndex, s.ttfFontOption)
+}
+
+func (s *SubsetFontObj) GobDecode(buf []byte) error {
+	return geh.DecodeMany(buf, &s.ttfp, &s.procsetid, &s.Family, &s.CharacterToGlyphIndex, &s.ttfFontOption)
 }
 
 func (s *SubsetFontObj) copy() *SubsetFontObj {
@@ -282,13 +291,5 @@ func (s *SubsetFontObj) procsetIdentifier() string {
 func (s *SubsetFontObj) ToTemplateFont() *TemplateFont {
 	s.characterMutex.RLock()
 	defer s.characterMutex.RUnlock()
-
-	return &TemplateFont{
-		id:         s.ttfp.Hash(),
-		procsetId:  s.procsetIdentifier(),
-		family:     s.Family,
-		option:     s.ttfFontOption,
-		b:          s.ttfp.FontData(),
-		characters: s.CharacterToGlyphIndex.AllKeysString(),
-	}
+	return NewTemplateFont(s)
 }

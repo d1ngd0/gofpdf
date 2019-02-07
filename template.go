@@ -25,6 +25,8 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+
+	"github.com/jung-kurt/gofpdf/geh"
 )
 
 // Template is an object that can be written to, then used and re-used any number of times within a document.
@@ -43,23 +45,25 @@ type Template interface {
 	gob.GobEncoder
 }
 
-func NewTemplateFont(id, family string, option TtfOption, b []byte) *TemplateFont {
+func NewTemplateFont(sf *SubsetFontObj) *TemplateFont {
 	return &TemplateFont{
-		id:     id,
-		family: family,
-		option: option,
-		b:      b,
+		subsetFont: sf,
 	}
 }
 
 type TemplateFont struct {
-	id         string
-	procsetId  string
-	family     string
-	option     TtfOption
-	b          []byte
-	bbuffer    io.Reader
-	characters string
+	subsetFont *SubsetFontObj
+}
+
+// GobEncode encodes the receiving template into a byte buffer. Use GobDecode
+// to decode the byte buffer back to a template.
+func (t *TemplateFont) GobEncode() ([]byte, error) {
+	return geh.EncodeMany(t.subsetFont)
+}
+
+// GobDecode decodes the specified byte buffer into the receiving template.
+func (t *TemplateFont) GobDecode(buf []byte) error {
+	return geh.DecodeMany(buf, &t.subsetFont)
 }
 
 func NewTemplateImageFromReader(id string, r io.Reader) (*TemplateImage, error) {
@@ -82,69 +86,12 @@ type TemplateImage struct {
 // GobEncode encodes the receiving template into a byte buffer. Use GobDecode
 // to decode the byte buffer back to a template.
 func (t *TemplateImage) GobEncode() ([]byte, error) {
-	var err error
-	w := new(bytes.Buffer)
-	encoder := gob.NewEncoder(w)
-	encodeMe := []interface{}{t.id, t.b}
-
-	for x := 0; x < len(encodeMe); x++ {
-		if err == nil {
-			err = encoder.Encode(encodeMe[x])
-		}
-	}
-
-	return w.Bytes(), err
+	return geh.EncodeMany(t.id, t.b)
 }
 
 // GobDecode decodes the specified byte buffer into the receiving template.
 func (t *TemplateImage) GobDecode(buf []byte) error {
-	var err error
-	r := bytes.NewBuffer(buf)
-	decoder := gob.NewDecoder(r)
-
-	decodeMe := []interface{}{&t.id, &t.b}
-
-	for x := 0; x < len(decodeMe); x++ {
-		if err == nil {
-			err = decoder.Decode(decodeMe[x])
-		}
-	}
-
-	return err
-}
-
-// GobEncode encodes the receiving template into a byte buffer. Use GobDecode
-// to decode the byte buffer back to a template.
-func (t *TemplateFont) GobEncode() ([]byte, error) {
-	var err error
-	w := new(bytes.Buffer)
-	encoder := gob.NewEncoder(w)
-	encodeMe := []interface{}{t.id, t.procsetId, t.family, t.option, t.b, t.characters}
-
-	for x := 0; x < len(encodeMe); x++ {
-		if err == nil {
-			err = encoder.Encode(encodeMe[x])
-		}
-	}
-
-	return w.Bytes(), err
-}
-
-// GobDecode decodes the specified byte buffer into the receiving template.
-func (t *TemplateFont) GobDecode(buf []byte) error {
-	var err error
-	r := bytes.NewBuffer(buf)
-	decoder := gob.NewDecoder(r)
-
-	decodeMe := []interface{}{&t.id, &t.procsetId, &t.family, &t.option, &t.b, &t.characters}
-
-	for x := 0; x < len(decodeMe); x++ {
-		if err == nil {
-			err = decoder.Decode(decodeMe[x])
-		}
-	}
-
-	return err
+	return geh.DecodeMany(buf, &t.id, &t.b)
 }
 
 type TplFunc func(*Fpdf) error
@@ -292,7 +239,6 @@ func (t *FpdfTpl) Serialize() ([]byte, error) {
 	b := new(bytes.Buffer)
 	enc := gob.NewEncoder(b)
 	err := enc.Encode(t)
-
 	return b.Bytes(), err
 }
 
@@ -302,71 +248,31 @@ func DeserializeTemplate(b []byte) (Template, error) {
 	tpl := new(FpdfTpl)
 	dec := gob.NewDecoder(bytes.NewBuffer(b))
 	err := dec.Decode(tpl)
+	if err != nil {
+	}
 	return tpl, err
 }
 
 // GobEncode encodes the receiving template into a byte buffer. Use GobDecode
 // to decode the byte buffer back to a template.
 func (t *FpdfTpl) GobEncode() ([]byte, error) {
-	w := new(bytes.Buffer)
-	encoder := gob.NewEncoder(w)
-
-	err := encoder.Encode(t.templates)
-
-	if err == nil {
-		err = encoder.Encode(t.images)
-	}
-	if err == nil {
-		err = encoder.Encode(t.fonts)
-	}
-	if err == nil {
-		err = encoder.Encode(t.corner)
-	}
-	if err == nil {
-		err = encoder.Encode(t.size)
-	}
-	if err == nil {
-		err = encoder.Encode(t.bytes)
-	}
-	if err == nil {
-		err = encoder.Encode(t.page)
-	}
-
-	return w.Bytes(), err
+	return geh.EncodeMany(t.templates, t.images, t.fonts, t.corner, t.size, t.bytes, t.page)
 }
 
 // GobDecode decodes the specified byte buffer into the receiving template.
 func (t *FpdfTpl) GobDecode(buf []byte) error {
-	r := bytes.NewBuffer(buf)
-	decoder := gob.NewDecoder(r)
-
 	tpls := make([]*FpdfTpl, 0)
-	err := decoder.Decode(&tpls)
+
+	if err := geh.DecodeMany(buf, &tpls, &t.images, &t.fonts, &t.corner, &t.size, &t.bytes, &t.page); err != nil {
+		return err
+	}
+
 	t.templates = make([]Template, len(tpls))
 	for x := 0; x < len(t.templates); x++ {
 		t.templates[x] = Template(tpls[x])
 	}
 
-	if err == nil {
-		err = decoder.Decode(&t.images)
-	}
-	if err == nil {
-		err = decoder.Decode(&t.fonts)
-	}
-	if err == nil {
-		err = decoder.Decode(&t.corner)
-	}
-	if err == nil {
-		err = decoder.Decode(&t.size)
-	}
-	if err == nil {
-		err = decoder.Decode(&t.bytes)
-	}
-	if err == nil {
-		err = decoder.Decode(&t.page)
-	}
-
-	return err
+	return nil
 }
 
 func (gp *Fpdf) loadParamsFromFpdf(f *Fpdf) {
