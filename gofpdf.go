@@ -40,8 +40,7 @@ type Fpdf struct {
 	buf bytes.Buffer
 
 	//pdf PProtection
-	pdfProtection   *PDFProtection
-	encryptionObjID int
+	pdfProtection *PDFProtection
 
 	// content streams only
 	compressLevel int
@@ -742,7 +741,7 @@ func (gp *Fpdf) addPageWithOption(opt PageOption) {
 	page.setOption(gp.curr.pageOption.merge(opt))
 
 	page.ResourcesRelate = fmt.Sprintf("%d 0 R", gp.pdfObjs.indexOfFirst(procSetType)+1)
-	gp.addObj(page)
+	gp.pdfObjs.addPageObj(page)
 	gp.resetCurrXY()
 }
 
@@ -820,7 +819,12 @@ func (gp *Fpdf) Close() error {
 }
 
 func (gp *Fpdf) compilePdf(w io.Writer) error {
-	gp.prepare()
+
+	if gp.isUseProtection() {
+		encObj := gp.pdfProtection.encryptionObj()
+		gp.addObj(encObj)
+	}
+
 	err := gp.Close()
 	if err != nil {
 		return err
@@ -1346,35 +1350,6 @@ func (gp *Fpdf) protection() *PDFProtection {
 	return gp.pdfProtection
 }
 
-func (gp *Fpdf) prepare() {
-
-	if gp.isUseProtection() {
-		encObj := gp.pdfProtection.encryptionObj()
-		gp.addObj(encObj)
-	}
-
-	if pagesObj := gp.pdfObjs.getPages(); pagesObj != nil {
-		indexCurrPage := -1
-		i := 0 //gp.indexOfFirstPageObj
-		max := len(gp.pdfObjs.objs)
-		for i < max {
-			switch gp.pdfObjs.objs[i].getType() {
-			case pageType:
-				pagesObj.Kids = fmt.Sprintf("%s %d 0 R ", pagesObj.Kids, i+1)
-				pagesObj.PageCount++
-				indexCurrPage = i
-			case contentType:
-				if indexCurrPage != -1 {
-					gp.pdfObjs.getPage(indexCurrPage).Contents = fmt.Sprintf("%s %d 0 R ", gp.pdfObjs.getPage(indexCurrPage).Contents, i+1)
-				}
-			case encryptionType:
-				gp.encryptionObjID = i + 1
-			}
-			i++
-		}
-	}
-}
-
 func (gp *Fpdf) xref(w io.Writer, xrefbyteoffset int, linelens []int, i int) error {
 
 	io.WriteString(w, "xref\n")
@@ -1391,8 +1366,8 @@ func (gp *Fpdf) xref(w io.Writer, xrefbyteoffset int, linelens []int, i int) err
 	io.WriteString(w, "<<\n")
 	fmt.Fprintf(w, "/Size %d\n", max+1)
 	io.WriteString(w, "/Root 1 0 R\n")
-	if gp.isUseProtection() {
-		fmt.Fprintf(w, "/Encrypt %d 0 R\n", gp.encryptionObjID)
+	if id := gp.pdfObjs.indexOfFirst(encryptionType); id >= 0 {
+		fmt.Fprintf(w, "/Encrypt %d 0 R\n", id+1)
 		io.WriteString(w, "/ID [()()]\n")
 	}
 	gp.GetInfo().write(w)

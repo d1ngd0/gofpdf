@@ -47,6 +47,12 @@ func (p *pdfObjs) addObj(iobj IObj) int {
 	return index
 }
 
+func (p *pdfObjs) addPageObj(page *PageObj) int {
+	index := p.addObj(page)
+	p.pages().addPage(index)
+	return index
+}
+
 func (p *pdfObjs) addProcsetObj(iobj ProcsetIObj) (string, int) {
 	var index int
 	pid := iobj.procsetIdentifier()
@@ -190,7 +196,7 @@ func (p *pdfObjs) currentPage() *PageObj {
 	return p.getPage(index)
 }
 
-func (p *pdfObjs) getPages() *PagesObj {
+func (p *pdfObjs) pages() *PagesObj {
 	index := p.indexOfFirst(pagesType)
 	if pages, ok := p.objs[index].(*PagesObj); ok {
 		return pages

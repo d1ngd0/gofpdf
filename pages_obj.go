@@ -37,3 +37,8 @@ func (p *PagesObj) getType() string {
 func (p *PagesObj) test() {
 	fmt.Print(p.getType() + "\n")
 }
+
+func (p *PagesObj) addPage(page int) {
+	p.PageCount++
+	p.Kids = fmt.Sprintf("%s %d 0 R ", p.Kids, page+1)
+}

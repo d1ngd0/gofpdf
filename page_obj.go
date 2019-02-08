@@ -10,7 +10,6 @@ const pageType = "Page"
 
 //PageObj pdf page object
 type PageObj struct { //impl IObj
-	Contents          string
 	ResourcesRelate   string
 	pageOption        PageOption
 	Links             []linkOption
@@ -55,17 +54,7 @@ func (p *PageObj) write(w io.Writer, objID int) error {
 		io.WriteString(w, "]\n")
 	}
 
-	/*me.buffer.WriteString("    /Font <<\n")
-	i := 0
-	max := len(me.Realtes)
-	for i < max {
-		realte := me.Realtes[i]
-		me.buffer.WriteString(fmt.Sprintf("      /F%d %d 0 R\n",realte.CountOfFont + 1, realte.IndexOfObj + 1))
-		i++
-	}
-	me.buffer.WriteString("    >>\n")*/
-	//me.buffer.WriteString("  >>\n")
-	fmt.Fprintf(w, "  /Contents %s\n", p.Contents) //sample  Contents 8 0 R
+	fmt.Fprintf(w, "  /Contents %d 0 R\n", p.indexOfContentObj+1)
 	p.pageOption.writePageBoundaries(w)
 	io.WriteString(w, ">>\n")
 	return nil
