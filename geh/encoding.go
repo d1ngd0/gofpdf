@@ -1,13 +1,14 @@
 package geh
 
 import (
-	"bytes"
 	"encoding/gob"
+
+	"github.com/jung-kurt/gofpdf/bp"
 )
 
 func EncodeMany(v ...interface{}) ([]byte, error) {
 	var err error
-	w := new(bytes.Buffer)
+	w := bp.GetBuffer()
 	encoder := gob.NewEncoder(w)
 
 	for x := 0; x < len(v); x++ {
@@ -21,7 +22,8 @@ func EncodeMany(v ...interface{}) ([]byte, error) {
 
 // GobDecode decodes the specified byte buffer into the receiving template.
 func DecodeMany(buf []byte, v ...interface{}) error {
-	r := bytes.NewBuffer(buf)
+	r := bp.GetFilledBuffer(buf)
+	defer bp.PutBuffer(r)
 
 	decoder := gob.NewDecoder(r)
 	for x := 0; x < len(v); x++ {

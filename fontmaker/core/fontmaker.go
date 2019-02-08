@@ -2,7 +2,6 @@ package core
 
 import (
 	"bufio"
-	"bytes"
 	"compress/zlib"
 	"errors"
 	"fmt"
@@ -11,6 +10,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/jung-kurt/gofpdf/bp"
 )
 
 //ErrFontLicenseDoesNotAllowEmbedding Font license does not allow embedding
@@ -62,8 +63,9 @@ func (f *FontMaker) MakeFont(fontpath string, mappath string, encode string, out
 	basename = strings.Replace(tmp[0], " ", "_", -1)
 	gzfilename := basename + ".z"
 
-	var buff bytes.Buffer
-	gzipwriter := zlib.NewWriter(&buff)
+	buff := bp.GetBuffer()
+	defer bp.PutBuffer(buff)
+	gzipwriter := zlib.NewWriter(buff)
 
 	fontbytes, err := ioutil.ReadFile(fontpath)
 	if err != nil {

@@ -3,6 +3,8 @@ package gofpdf
 import (
 	"fmt"
 	"io"
+
+	"github.com/jung-kurt/gofpdf/bp"
 )
 
 //UnicodeMap unicode map
@@ -62,8 +64,8 @@ func (u *UnicodeMap) write(w io.Writer, objID int) error {
 		glyphIndexToCharacter.set(index, k)
 	}
 
-	buff := GetBuffer()
-	defer PutBuffer(buff)
+	buff := bp.GetBuffer()
+	defer bp.PutBuffer(buff)
 
 	buff.WriteString(prefix)
 	buff.WriteString("1 begincodespacerange\n")

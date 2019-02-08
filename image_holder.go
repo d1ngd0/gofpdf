@@ -7,6 +7,8 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/jung-kurt/gofpdf/bp"
 )
 
 //ImageHolder hold image data
@@ -33,12 +35,14 @@ func ImageHolderByReader(r io.Reader) (ImageHolder, error) {
 //imageBuff image holder (impl ImageHolder)
 type imageBuff struct {
 	id string
-	bytes.Buffer
+	*bytes.Buffer
 }
 
 func newImageBuff(b []byte) (*imageBuff, error) {
-	var i imageBuff
-	i.id = fmt.Sprintf("%x", sha1.Sum(b))
+	i := imageBuff{
+		Buffer: bp.GetBuffer(),
+		id:     fmt.Sprintf("%x", sha1.Sum(b)),
+	}
 	i.Write(b)
 	return &i, nil
 }

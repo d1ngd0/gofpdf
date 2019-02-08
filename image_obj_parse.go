@@ -11,6 +11,8 @@ import (
 	"io"
 	"io/ioutil"
 	"strings"
+
+	"github.com/jung-kurt/gofpdf/bp"
 )
 
 func writeImgProp(w io.Writer, imginfo imgInfo) error {
@@ -391,8 +393,8 @@ func parsePng(f *bytes.Reader, info *imgInfo, imgConfig image.Config) error {
 
 func compress(data []byte) ([]byte, error) {
 	var results []byte
-	var buff bytes.Buffer
-	zwr, err := zlib.NewWriterLevel(&buff, zlib.BestSpeed)
+	buff := bp.GetBuffer()
+	zwr, err := zlib.NewWriterLevel(buff, zlib.BestSpeed)
 
 	if err != nil {
 		return results, err

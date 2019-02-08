@@ -1,10 +1,11 @@
 package gofpdf
 
 import (
-	"bytes"
 	"compress/zlib"
 	"fmt"
 	"io"
+
+	"github.com/jung-kurt/gofpdf/bp"
 )
 
 const contentType = "Content"
@@ -25,14 +26,14 @@ func (c *ContentObj) init(funcGetRoot func() *Fpdf) {
 }
 
 func (c *ContentObj) bytes(objID int) ([]byte, error) {
-	buff := new(bytes.Buffer)
+	buff := bp.GetBuffer()
 	err := c.listCache.write(buff, c.protection())
 	return buff.Bytes(), err
 }
 
 func (c *ContentObj) write(w io.Writer, objID int) error {
-	buff := GetBuffer()
-	defer PutBuffer(buff)
+	buff := bp.GetBuffer()
+	defer bp.PutBuffer(buff)
 
 	isFlate := (c.getRoot().compressLevel != zlib.NoCompression)
 	if isFlate {

@@ -7,6 +7,7 @@ import (
 	"io"
 	"sort"
 
+	"github.com/jung-kurt/gofpdf/bp"
 	"github.com/jung-kurt/gofpdf/fontmaker/core"
 )
 
@@ -49,8 +50,8 @@ func (p *PdfDictionaryObj) write(w io.Writer, objID int) error {
 	}
 
 	//zipvar buff bytes.Buffer
-	zbuff := GetBuffer()
-	defer PutBuffer(zbuff)
+	zbuff := bp.GetBuffer()
+	defer bp.PutBuffer(zbuff)
 
 	gzipwriter := zlib.NewWriter(zbuff)
 	_, err = gzipwriter.Write(b)

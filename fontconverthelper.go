@@ -2,17 +2,16 @@ package gofpdf
 
 import (
 	"strconv"
-	//"fmt"
-	"bytes"
+
+	"github.com/jung-kurt/gofpdf/bp"
 )
 
 func FontConvertHelper_Cw2Str(cw FontCw) string {
-	buff := new(bytes.Buffer)
+	buff := bp.GetBuffer()
+	defer bp.PutBuffer(buff)
 	buff.WriteString(" ")
-	i := 32
-	for i <= 255 {
+	for i := 32; i <= 255; i++ {
 		buff.WriteString(strconv.Itoa(cw[Chr(i)]) + " ")
-		i++
 	}
 	return buff.String()
 }

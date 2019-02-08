@@ -18,12 +18,12 @@ package gofpdf
  */
 
 import (
-	"bytes"
 	"crypto/sha1"
 	"encoding/gob"
 	"errors"
 	"fmt"
 
+	"github.com/jung-kurt/gofpdf/bp"
 	"github.com/jung-kurt/gofpdf/geh"
 )
 
@@ -220,7 +220,7 @@ func (t *FpdfTpl) NumPages() int {
 
 // Serialize turns a template into a byte string for later deserialization
 func (t *FpdfTpl) Serialize() ([]byte, error) {
-	b := new(bytes.Buffer)
+	b := bp.GetBuffer()
 	enc := gob.NewEncoder(b)
 	err := enc.Encode(t)
 	return b.Bytes(), err
@@ -230,7 +230,9 @@ func (t *FpdfTpl) Serialize() ([]byte, error) {
 // template
 func DeserializeTemplate(b []byte) (Template, error) {
 	tpl := new(FpdfTpl)
-	dec := gob.NewDecoder(bytes.NewBuffer(b))
+	bb := bp.GetFilledBuffer(b)
+	defer bp.PutBuffer(bb)
+	dec := gob.NewDecoder(bb)
 	err := dec.Decode(tpl)
 	if err != nil {
 	}
