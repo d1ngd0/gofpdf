@@ -5,14 +5,16 @@ import (
 	"io"
 )
 
+const templateType = "Template"
+
 //TemplateObj Template object
 type TemplateObj struct {
 	//imagepath string
 
 	pdfProtection *PDFProtection
 	getRoot       func() *Fpdf
-	images        []*TemplateImage
-	fonts         []*TemplateFont
+	images        []*ImageObj
+	fonts         []*SubsetFontObj
 	templates     []Template
 	x, y          float64
 	w, h          float64
@@ -59,20 +61,20 @@ func (tpl *TemplateObj) write(w io.Writer, objID int) error {
 
 	io.WriteString(w, "/Font <<\n")
 	for x := 0; x < len(tpl.fonts); x++ {
-		id := tpl.fonts[x].subsetFont.procsetIdentifier()
-		fmt.Fprintf(w, "/%s %d 0 R\n", id, tpl.getProcsetIndex(id, true)+1)
+		id := tpl.fonts[x].procsetIdentifier()
+		fmt.Fprintf(w, "/%s %d 0 R\n", id, tpl.getProcsetIndex(id)+1)
 	}
 	io.WriteString(w, ">>\n")
 
 	if len(tpl.images) > 0 { //|| len(tTemplates) > 0 {
 		io.WriteString(w, "/XObject <<\n")
 		for x := 0; x < len(tpl.images); x++ {
-			id := tpl.images[x].image.procsetIdentifier()
-			fmt.Fprintf(w, "/%s %d 0 R\n", id, tpl.getProcsetIndex(id, false)+1)
+			id := tpl.images[x].procsetIdentifier()
+			fmt.Fprintf(w, "/%s %d 0 R\n", id, tpl.getProcsetIndex(id)+1)
 		}
 		for x := 0; x < len(tpl.templates); x++ {
 			id := fmt.Sprintf("TPL%s", tpl.templates[x].ID())
-			fmt.Fprintf(w, "/TPL%s %d 0 R\n", id, tpl.getProcsetIndex(id, false)+1)
+			fmt.Fprintf(w, "/TPL%s %d 0 R\n", id, tpl.getProcsetIndex(id)+1)
 		}
 		io.WriteString(w, ">>\n")
 	}
@@ -97,7 +99,7 @@ func (tpl *TemplateObj) write(w io.Writer, objID int) error {
 }
 
 func (tpl *TemplateObj) getType() string {
-	return "Template"
+	return templateType
 }
 
 func (tpl *TemplateObj) ToTemplate() Template {
@@ -116,6 +118,7 @@ func (tpl *TemplateObj) procsetIdentifier() string {
 	return fmt.Sprintf("TPL%s", tpl.id)
 }
 
-func (tpl *TemplateObj) getProcsetIndex(id string, isFont bool) int {
-	return tpl.getRoot().getProcsetIndex(id, isFont)
+func (tpl *TemplateObj) getProcsetIndex(pid string) int {
+	id, _ := tpl.getRoot().pdfObjs.hasProcsetID(pid)
+	return id
 }

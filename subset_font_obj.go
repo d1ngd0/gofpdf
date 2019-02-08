@@ -11,6 +11,8 @@ import (
 	"github.com/jung-kurt/gofpdf/geh"
 )
 
+const subsetFontType = "SubsetFont"
+
 //ErrCharNotFound char not found
 var ErrCharNotFound = errors.New("char not found")
 
@@ -176,7 +178,7 @@ func (s *SubsetFontObj) CharWidth(r rune) (uint, error) {
 }
 
 func (s *SubsetFontObj) getType() string {
-	return "SubsetFont"
+	return subsetFontType
 }
 
 func (s *SubsetFontObj) charCodeToGlyphIndexFormat12(r rune) (uint, error) {

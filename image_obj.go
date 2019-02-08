@@ -14,6 +14,8 @@ import (
 	"github.com/jung-kurt/gofpdf/geh"
 )
 
+const imageType = "Image"
+
 //ImageObj image object
 type ImageObj struct {
 	//imagepath string
@@ -120,7 +122,7 @@ func (i *ImageObj) createDeviceRGB() (*DeviceRGBObj, error) {
 }
 
 func (i *ImageObj) getType() string {
-	return "Image"
+	return imageType
 }
 
 //SetImagePath set image path

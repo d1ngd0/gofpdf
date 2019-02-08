@@ -7,10 +7,11 @@ import (
 	"io"
 )
 
+const contentType = "Content"
+
 //ContentObj content object
 type ContentObj struct { //impl IObj
 	listCache listCacheContent
-	pageIndex int
 	//text bytes.Buffer
 	getRoot func() *Fpdf
 }
@@ -78,7 +79,7 @@ func (c *ContentObj) write(w io.Writer, objID int) error {
 }
 
 func (c *ContentObj) getType() string {
-	return "Content"
+	return contentType
 }
 
 //AppendStreamText append text

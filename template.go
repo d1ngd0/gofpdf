@@ -32,8 +32,8 @@ type Template interface {
 	ID() string
 	Size() (Point, Rect)
 	Bytes() []byte
-	Images() []*TemplateImage
-	Fonts() []*TemplateFont
+	Images() []*ImageObj
+	Fonts() []*SubsetFontObj
 	Templates() []Template
 	NumPages() int
 	FromPage(int) (Template, error)
@@ -103,23 +103,22 @@ func newTpl(corner Point, opts []PdfOption, fn TplFunc, copyFrom *Fpdf) (Templat
 		return nil, err
 	}
 
-	contents := gp.getAllContent()
-	bytes := make([][]byte, len(contents))
-	sizes := make([]Rect, len(contents))
-	x := 0
+	pages := gp.getAllPages()
+	numPages := len(pages)
+	bytes := make([][]byte, numPages)
+	sizes := make([]Rect, numPages)
 
-	for index, content := range contents {
-		bytes[x], err = content.bytes(index)
+	for x := 0; x < numPages; x++ {
+		page := pages[x]
+		content := page.getContent()
+		bytes[x], err = content.bytes(page.indexOfContentObj)
 		if err != nil {
 			return nil, err
 		}
 
-		page := gp.pdfObjs[content.pageIndex].(*PageObj)
 		if pb := page.pageOption.GetBoundary(PageBoundaryMedia); pb != nil {
-			gp.curr.IndexOfPageObj = content.pageIndex
 			sizes[x] = gp.GetBoundarySize(PageBoundaryMedia)
 		}
-		x++
 	}
 
 	fpdf := &FpdfTpl{
@@ -129,8 +128,8 @@ func newTpl(corner Point, opts []PdfOption, fn TplFunc, copyFrom *Fpdf) (Templat
 		page:   len(bytes) - 1,
 	}
 
-	fpdf.fonts = gp.getTemplateFonts()
-	fpdf.images = gp.getTemplateImages()
+	fpdf.fonts = gp.getAllSubsetFonts()
+	fpdf.images = gp.getAllImages()
 	fpdf.templates, err = gp.getTemplates()
 	return fpdf, err
 }
@@ -140,8 +139,8 @@ type FpdfTpl struct {
 	corner    Point
 	size      []Rect
 	bytes     [][]byte
-	fonts     []*TemplateFont
-	images    []*TemplateImage
+	fonts     []*SubsetFontObj
+	images    []*ImageObj
 	templates []Template
 	page      int
 }
@@ -198,12 +197,12 @@ func (t *FpdfTpl) FromPages() []Template {
 }
 
 // Images returns a list of the images used in this template
-func (t *FpdfTpl) Images() []*TemplateImage {
+func (t *FpdfTpl) Images() []*ImageObj {
 	return t.images
 }
 
 // Fonts returns a list of the fonts used in the template
-func (t *FpdfTpl) Fonts() []*TemplateFont {
+func (t *FpdfTpl) Fonts() []*SubsetFontObj {
 	return t.fonts
 }
 
@@ -277,14 +276,13 @@ func (gp *Fpdf) loadParamsFromFpdf(f *Fpdf) {
 }
 
 func (gp *Fpdf) loadFontsFromFpdf(f *Fpdf) {
-	for x := 0; x < len(f.pdfObjs); x++ {
-		obj := f.pdfObjs[x]
-		if subsetFont, ok := obj.(*SubsetFontObj); ok {
-			ssf := gp.loadFontFromFpdf(f, subsetFont)
-			// set the current font
-			if ssf.procsetIdentifier() == f.curr.Font_ISubset.procsetIdentifier() {
-				gp.curr.Font_ISubset = ssf
-			}
+	fonts := gp.pdfObjs.allSubsetFonts()
+	max := len(fonts)
+	for x := 0; x < max; x++ {
+		ssf := gp.loadFontFromFpdf(f, fonts[x])
+		// set the current font
+		if ssf.procsetIdentifier() == f.curr.Font_ISubset.procsetIdentifier() {
+			gp.curr.Font_ISubset = ssf
 		}
 	}
 }
@@ -296,10 +294,10 @@ func (gp *Fpdf) loadFontFromFpdf(f *Fpdf, orig *SubsetFontObj) *SubsetFontObj {
 	subfontdesc := new(SubfontDescriptorObj)
 	pdfdic := new(PdfDictionaryObj)
 
-	*cidfont = *f.pdfObjs[orig.indexObjCIDFont].(*CIDFontObj)
-	*unicodemap = *f.pdfObjs[orig.indexObjUnicodeMap].(*UnicodeMap)
-	*subfontdesc = *f.pdfObjs[cidfont.indexObjSubfontDescriptor].(*SubfontDescriptorObj)
-	*pdfdic = *f.pdfObjs[subfontdesc.indexObjPdfDictionary].(*PdfDictionaryObj)
+	*cidfont = *f.pdfObjs.at(orig.indexObjCIDFont).(*CIDFontObj)
+	*unicodemap = *f.pdfObjs.at(orig.indexObjUnicodeMap).(*UnicodeMap)
+	*subfontdesc = *f.pdfObjs.at(cidfont.indexObjSubfontDescriptor).(*SubfontDescriptorObj)
+	*pdfdic = *f.pdfObjs.at(subfontdesc.indexObjPdfDictionary).(*PdfDictionaryObj)
 
 	unicodemap.SetPtrToSubsetFontObj(subfont)
 	unicodeindex := gp.addObj(unicodemap)
@@ -317,13 +315,8 @@ func (gp *Fpdf) loadFontFromFpdf(f *Fpdf, orig *SubsetFontObj) *SubsetFontObj {
 
 	subfont.SetIndexObjCIDFont(cidindex)
 	subfont.SetIndexObjUnicodeMap(unicodeindex)
-	index := gp.addObj(subfont) //add หลังสุด
-	id := subfont.procsetIdentifier()
 
-	procset := gp.getProcset()
-	if !procset.Realtes.IsContainsFamilyAndStyle(subfont.Family, subfont.ttfFontOption.Style&^Underline) {
-		procset.Realtes = append(procset.Realtes, RelateFont{Family: subfont.Family, IndexOfObj: index, IdOfObj: id, Style: subfont.ttfFontOption.Style &^ Underline})
-	}
+	gp.addProcsetObj(subfont)
 
 	return subfont
 }

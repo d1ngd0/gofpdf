@@ -6,22 +6,30 @@ import (
 	"strings"
 )
 
+const pageType = "Page"
+
 //PageObj pdf page object
 type PageObj struct { //impl IObj
-	Contents        string
-	ResourcesRelate string
-	pageOption      PageOption
-	Links           []linkOption
-	getRoot         func() *Fpdf
+	Contents          string
+	ResourcesRelate   string
+	pageOption        PageOption
+	Links             []linkOption
+	indexOfContentObj int
+	getRoot           func() *Fpdf
 }
 
 func (p *PageObj) init(funcGetRoot func() *Fpdf) {
 	p.getRoot = funcGetRoot
 	p.Links = make([]linkOption, 0)
+	p.indexOfContentObj = -1
 }
 
 func (p *PageObj) setOption(opt PageOption) {
 	p.pageOption = opt
+}
+
+func (p *PageObj) setIndexOfContentObj(index int) {
+	p.indexOfContentObj = index
 }
 
 func (p *PageObj) write(w io.Writer, objID int) error {
@@ -94,5 +102,9 @@ func (p *PageObj) writeInternalLink(w io.Writer, l linkOption, anchors map[strin
 }
 
 func (p *PageObj) getType() string {
-	return "Page"
+	return pageType
+}
+
+func (p *PageObj) getContent() *ContentObj {
+	return p.getRoot().pdfObjs.getPageContent(p)
 }

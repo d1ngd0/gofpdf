@@ -5,6 +5,8 @@ import (
 	"io"
 )
 
+const pagesType = "Pages"
+
 //PagesObj pdf pages object
 type PagesObj struct { //impl IObj
 	PageCount int
@@ -29,7 +31,7 @@ func (p *PagesObj) write(w io.Writer, objID int) error {
 }
 
 func (p *PagesObj) getType() string {
-	return "Pages"
+	return pagesType
 }
 
 func (p *PagesObj) test() {

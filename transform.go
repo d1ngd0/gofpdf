@@ -21,14 +21,14 @@ type TransformMatrix struct {
 // image output and finally a call to TransformEnd(). All transformation
 // contexts must be properly ended prior to outputting the document.
 func (gp *Fpdf) TransformBegin() {
-	gp.getContent().AppendStreamTransformBegin()
+	gp.currentContent().AppendStreamTransformBegin()
 }
 
 // TransformEnd applies a transformation that was begun with a call to TransformBegin().
 //
 // The TransformBegin() example demonstrates this method.
 func (gp *Fpdf) TransformEnd() {
-	gp.getContent().AppendStreamTransformEnd()
+	gp.currentContent().AppendStreamTransformEnd()
 }
 
 // TransformScaleX scales the width of the following text, drawings and images.
@@ -203,5 +203,5 @@ func (gp *Fpdf) TransformSkew(angleX, angleY, x, y float64) error {
 // according to the specified matrix. It is typically easier to use the various
 // methods such as TransformRotate() and TransformMirrorVertical() instead.
 func (gp *Fpdf) Transform(tm TransformMatrix) {
-	gp.getContent().AppendStreamTransform(tm)
+	gp.currentContent().AppendStreamTransform(tm)
 }

@@ -16,7 +16,7 @@ func (gp *Fpdf) ClipRect(x, y, w, h float64, outline bool) {
 		style = "S"
 	}
 
-	gp.getContent().AppendStreamClipRect(x, y, w, h, style)
+	gp.currentContent().AppendStreamClipRect(x, y, w, h, style)
 }
 
 // ClipText begins a clipping operation in which rendering is confined to the
@@ -34,7 +34,7 @@ func (gp *Fpdf) ClipText(x, y float64, txtStr string, outline bool) {
 		style = 5
 	}
 
-	gp.getContent().AppendStreamClipText(x, y, txtStr, style)
+	gp.currentContent().AppendStreamClipText(x, y, txtStr, style)
 }
 
 // ClipRoundedRect begins a rectangular clipping operation. The rectangle is of
@@ -54,7 +54,7 @@ func (gp *Fpdf) ClipRoundedRect(x, y, w, h, r float64, outline bool) {
 		style = "S"
 	}
 
-	gp.getContent().AppendStreamClipRoundedRect(x, y, w, h, r, style)
+	gp.currentContent().AppendStreamClipRoundedRect(x, y, w, h, r, style)
 }
 
 // ClipEllipse begins an elliptical clipping operation. The ellipse is centered
@@ -73,7 +73,7 @@ func (gp *Fpdf) ClipEllipse(x, y, rx, ry float64, outline bool) {
 		style = "S"
 	}
 
-	gp.getContent().AppendStreamClipEllipse(x, y, rx, ry, style)
+	gp.currentContent().AppendStreamClipEllipse(x, y, rx, ry, style)
 }
 
 // ClipCircle begins a circular clipping operation. The circle is centered at
@@ -109,7 +109,7 @@ func (gp *Fpdf) ClipPolygon(points []Point, outline bool) {
 		gp.UnitsToPointsVar(&points[x].X, &points[x].Y)
 	}
 
-	gp.getContent().AppendStreamClipPolygon(points, style)
+	gp.currentContent().AppendStreamClipPolygon(points, style)
 }
 
 // ClipEnd ends a clipping operation that was started with a call to
@@ -119,5 +119,5 @@ func (gp *Fpdf) ClipPolygon(points []Point, outline bool) {
 //
 // The ClipText() example demonstrates this method.
 func (gp *Fpdf) ClipEnd() {
-	gp.getContent().AppendStreamClipEnd()
+	gp.currentContent().AppendStreamClipEnd()
 }

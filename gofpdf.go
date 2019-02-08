@@ -28,25 +28,12 @@ type Fpdf struct {
 	// topMargin  float64
 	margins Margins
 
-	pdfObjs []IObj
+	pdfObjs *pdfObjs
 	anchors map[string]anchorOption
 
-	/*---index ของ obj สำคัญๆ เก็บเพื่อลด loop ตอนค้นหา---*/
-	//index ของ obj pages
-	indexOfPagesObj int
-
-	//index ของ obj page อันแรก
-	indexOfFirstPageObj int
-
-	//ต่ำแหน่งปัจจุบัน
 	curr Current
 
 	indexEncodingObjFonts []int
-	indexOfContent        int
-
-	//index ของ procset ซึ่งควรจะมีอันเดียว
-	indexOfProcSet int
-
 	//IsUnderline bool
 
 	// Buffer for io.Reader compliance
@@ -65,13 +52,13 @@ type Fpdf struct {
 
 // Set a page boundary
 func (gp *Fpdf) SetPageBoundary(pb *PageBoundary) {
-	if page := gp.getCurrentPage(); page != nil {
+	if page := gp.currentPage(); page != nil {
 		page.pageOption.AddPageBoundary(pb)
 	}
 }
 
 func (gp *Fpdf) GetPageBoundary(t int) *PageBoundary {
-	if page := gp.getCurrentPage(); page != nil {
+	if page := gp.currentPage(); page != nil {
 		if boundary := page.pageOption.GetBoundary(t); boundary != nil {
 			return boundary
 		}
@@ -138,7 +125,7 @@ func (gp *Fpdf) SetArtBox(x, y, w, h float64) {
 //SetLineWidth : set line width
 func (gp *Fpdf) SetLineWidth(width float64) {
 	gp.curr.lineWidth = gp.UnitsToPoints(width)
-	gp.getContent().AppendStreamSetLineWidth(gp.curr.lineWidth)
+	gp.currentContent().AppendStreamSetLineWidth(gp.curr.lineWidth)
 }
 
 //SetCompressLevel : set compress Level for content streams
@@ -173,7 +160,7 @@ func (gp *Fpdf) SetNoCompression() {
 //  pdf.SetLineType("dotted")
 //  pdf.Line(50, 400, 550, 400)
 func (gp *Fpdf) SetLineType(linetype string) {
-	gp.getContent().AppendStreamSetLineType(linetype)
+	gp.currentContent().AppendStreamSetLineType(linetype)
 }
 
 const (
@@ -189,7 +176,7 @@ const (
 func (gp *Fpdf) SetLineCapStyle(style int) {
 	if style != gp.curr.capStyle {
 		gp.curr.capStyle = style
-		gp.getContent().AppendStreamSetCapStyle(style)
+		gp.currentContent().AppendStreamSetCapStyle(style)
 	}
 }
 
@@ -205,7 +192,7 @@ const (
 func (gp *Fpdf) SetLineJoinStyle(style int) {
 	if style != gp.curr.joinStyle {
 		gp.curr.joinStyle = style
-		gp.getContent().AppendStreamSetJoinStyle(gp.curr.joinStyle)
+		gp.currentContent().AppendStreamSetJoinStyle(gp.curr.joinStyle)
 	}
 }
 
@@ -228,18 +215,18 @@ func (gp *Fpdf) Beziergon(pts Points, styleStr string) error {
 		return fmt.Errorf("the number of points can not be less than 4. %d found", len(points))
 	}
 
-	gp.getContent().AppendStreamPoint(points[0].XY())
+	gp.currentContent().AppendStreamPoint(points[0].XY())
 
 	points = points[1:]
 	for len(points) >= 3 {
 		cx0, cy0 := points[0].XY()
 		cx1, cy1 := points[1].XY()
 		x1, y1 := points[2].XY()
-		gp.getContent().AppendStreamCurveBezierCubic(cx0, cy0, cx1, cy1, x1, y1)
+		gp.currentContent().AppendStreamCurveBezierCubic(cx0, cy0, cx1, cy1, x1, y1)
 		points = points[3:]
 	}
 
-	gp.getContent().AppendStreamDrawPath(styleStr)
+	gp.currentContent().AppendStreamDrawPath(styleStr)
 	return nil
 }
 
@@ -261,9 +248,9 @@ func (gp *Fpdf) Beziergon(pts Points, styleStr string) error {
 // The Circle() example demonstrates this method.
 func (gp *Fpdf) CurveBezierCubic(x0, y0, cx0, cy0, cx1, cy1, x1, y1 float64, styleStr string) {
 	gp.UnitsToPointsVar(&x0, &y0, &cx0, &cy0, &cx1, &cy1, &x1, &y1)
-	gp.getContent().AppendStreamPoint(x0, y0)
-	gp.getContent().AppendStreamCurveBezierCubic(cx0, cy0, cx1, cy1, x1, y1)
-	gp.getContent().AppendStreamDrawPath(styleStr)
+	gp.currentContent().AppendStreamPoint(x0, y0)
+	gp.currentContent().AppendStreamCurveBezierCubic(cx0, cy0, cx1, cy1, x1, y1)
+	gp.currentContent().AppendStreamDrawPath(styleStr)
 }
 
 // CurveCubic draws a single-segment cubic Bézier curve. This routine performs
@@ -287,7 +274,7 @@ func (gp *Fpdf) CurveCubic(x0, y0, cx0, cy0, x1, y1, cx1, cy1 float64, styleStr 
 // The MoveTo() example demonstrates this method.
 func (gp *Fpdf) CurveBezierCubicTo(cx0, cy0, cx1, cy1, x, y float64) {
 	gp.UnitsToPointsVar(&cx0, &cy0, &cx1, &cy1, &x, &y)
-	gp.getContent().AppendStreamCurveBezierCubic(cx0, cy0, cx1, cy1, x, y)
+	gp.currentContent().AppendStreamCurveBezierCubic(cx0, cy0, cx1, cy1, x, y)
 	gp.curr.X, gp.curr.Y = x, y
 }
 
@@ -297,7 +284,7 @@ func (gp *Fpdf) CurveBezierCubicTo(cx0, cy0, cx1, cy1, x, y float64) {
 //
 // The MoveTo() example demonstrates this method.
 func (gp *Fpdf) ClosePath() {
-	gp.getContent().AppendStreamClosePath()
+	gp.currentContent().AppendStreamClosePath()
 }
 
 // DrawPath actually draws the path on the page.
@@ -319,7 +306,7 @@ func (gp *Fpdf) ClosePath() {
 //
 // The MoveTo() example demonstrates this method.
 func (gp *Fpdf) DrawPath(styleStr string) {
-	gp.getContent().AppendStreamDrawPath(styleStr)
+	gp.currentContent().AppendStreamDrawPath(styleStr)
 }
 
 // Ln performs a line break. The current abscissa goes back to the left margin
@@ -336,7 +323,7 @@ func (gp *Fpdf) ln(h float64, toLeftMargin bool) {
 	}
 
 	if gp.curr.Y+h > gp.bottomMarginHeight() {
-		page := gp.getCurrentPage()
+		page := gp.currentPage()
 		gp.addPageWithOption(page.pageOption)
 	}
 
@@ -367,7 +354,7 @@ func (gp *Fpdf) Circle(x, y, r float64, styleStr string) {
 // The Circle() example demonstrates this method.
 func (gp *Fpdf) Ellipse(x, y, rx, ry, degRotate float64, styleStr string) {
 	gp.UnitsToPointsVar(&x, &y, &rx, &ry)
-	gp.getContent().AppendStreamArcTo(x, y, rx, ry, degRotate, 0, 360, styleStr, false)
+	gp.currentContent().AppendStreamArcTo(x, y, rx, ry, degRotate, 0, 360, styleStr, false)
 }
 
 // Arc draws an elliptical arc centered at point (x, y). rx and ry specify its
@@ -386,7 +373,7 @@ func (gp *Fpdf) Ellipse(x, y, rx, ry, degRotate float64, styleStr string) {
 // The Circle() example demonstrates this method.
 func (gp *Fpdf) Arc(x, y, rx, ry, degRotate, degStart, degEnd float64, styleStr string) {
 	gp.UnitsToPointsVar(&x, &y, &rx, &ry)
-	gp.getContent().AppendStreamArcTo(x, y, rx, ry, degRotate, degStart, degEnd, styleStr, true)
+	gp.currentContent().AppendStreamArcTo(x, y, rx, ry, degRotate, degStart, degEnd, styleStr, true)
 
 }
 
@@ -407,13 +394,13 @@ func (gp *Fpdf) Arc(x, y, rx, ry, degRotate, degStart, degEnd float64, styleStr 
 // The MoveTo() example demonstrates this method.
 func (gp *Fpdf) ArcTo(x, y, rx, ry, degRotate, degStart, degEnd float64) {
 	gp.UnitsToPointsVar(&x, &y, &rx, &ry)
-	gp.getContent().AppendStreamArcTo(x, y, rx, ry, degRotate, degStart, degEnd, "", true)
+	gp.currentContent().AppendStreamArcTo(x, y, rx, ry, degRotate, degStart, degEnd, "", true)
 }
 
 //Line : draw line
 func (gp *Fpdf) Line(x1 float64, y1 float64, x2 float64, y2 float64) {
 	gp.UnitsToPointsVar(&x1, &y1, &x2, &y2)
-	gp.getContent().AppendStreamLine(x1, y1, x2, y2)
+	gp.currentContent().AppendStreamLine(x1, y1, x2, y2)
 }
 
 // MoveTo moves the stylus to (x, y) without drawing the path from the
@@ -428,7 +415,7 @@ func (gp *Fpdf) Line(x1 float64, y1 float64, x2 float64, y2 float64) {
 // overlaying the lines.
 func (gp *Fpdf) MoveTo(x, y float64) {
 	gp.UnitsToPointsVar(&x, &y)
-	gp.getContent().AppendStreamPoint(x, y)
+	gp.currentContent().AppendStreamPoint(x, y)
 	gp.curr.X, gp.curr.Y = x, y
 }
 
@@ -439,19 +426,19 @@ func (gp *Fpdf) MoveTo(x, y float64) {
 // The MoveTo() example demonstrates this method.
 func (gp *Fpdf) LineTo(x, y float64) {
 	gp.UnitsToPointsVar(&x, &y)
-	gp.getContent().AppendStreamLineTo(x, y)
+	gp.currentContent().AppendStreamLineTo(x, y)
 }
 
 //RectFromLowerLeft : draw rectangle from lower-left corner (x, y)
 func (gp *Fpdf) RectFromLowerLeft(x float64, y float64, wdth float64, hght float64) {
 	gp.UnitsToPointsVar(&x, &y, &wdth, &hght)
-	gp.getContent().AppendStreamRectangle(x, y, wdth, hght, "")
+	gp.currentContent().AppendStreamRectangle(x, y, wdth, hght, "")
 }
 
 //RectFromUpperLeft : draw rectangle from upper-left corner (x, y)
 func (gp *Fpdf) RectFromUpperLeft(x float64, y float64, wdth float64, hght float64) {
 	gp.UnitsToPointsVar(&x, &y, &wdth, &hght)
-	gp.getContent().AppendStreamRectangle(x, y+hght, wdth, hght, "")
+	gp.currentContent().AppendStreamRectangle(x, y+hght, wdth, hght, "")
 }
 
 //RectFromLowerLeftWithStyle : draw rectangle from lower-left corner (x, y)
@@ -461,7 +448,7 @@ func (gp *Fpdf) RectFromUpperLeft(x float64, y float64, wdth float64, hght float
 //		DF or FD: draw and fill
 func (gp *Fpdf) RectFromLowerLeftWithStyle(x float64, y float64, wdth float64, hght float64, style string) {
 	gp.UnitsToPointsVar(&x, &y, &wdth, &hght)
-	gp.getContent().AppendStreamRectangle(x, y, wdth, hght, style)
+	gp.currentContent().AppendStreamRectangle(x, y, wdth, hght, style)
 }
 
 //RectFromUpperLeftWithStyle : draw rectangle from upper-left corner (x, y)
@@ -471,25 +458,25 @@ func (gp *Fpdf) RectFromLowerLeftWithStyle(x float64, y float64, wdth float64, h
 //		DF or FD: draw and fill
 func (gp *Fpdf) RectFromUpperLeftWithStyle(x float64, y float64, wdth float64, hght float64, style string) {
 	gp.UnitsToPointsVar(&x, &y, &wdth, &hght)
-	gp.getContent().AppendStreamRectangle(x, y+hght, wdth, hght, style)
+	gp.currentContent().AppendStreamRectangle(x, y+hght, wdth, hght, style)
 }
 
 //Oval : draw oval
 func (gp *Fpdf) Oval(x1 float64, y1 float64, x2 float64, y2 float64) {
 	gp.UnitsToPointsVar(&x1, &y1, &x2, &y2)
-	gp.getContent().AppendStreamOval(x1, y1, x2, y2)
+	gp.currentContent().AppendStreamOval(x1, y1, x2, y2)
 }
 
 //SetGrayFill set the grayscale for the fill, takes a float64 between 0.0 and 1.0
 func (gp *Fpdf) SetGrayFill(grayScale float64) {
 	gp.curr.grayFill = grayScale
-	gp.getContent().AppendStreamSetGrayFill(grayScale)
+	gp.currentContent().AppendStreamSetGrayFill(grayScale)
 }
 
 //SetGrayStroke set the grayscale for the stroke, takes a float64 between 0.0 and 1.0
 func (gp *Fpdf) SetGrayStroke(grayScale float64) {
 	gp.curr.grayStroke = grayScale
-	gp.getContent().AppendStreamSetGrayStroke(grayScale)
+	gp.currentContent().AppendStreamSetGrayStroke(grayScale)
 }
 
 //SetX : set current position X
@@ -535,12 +522,12 @@ func (gp *Fpdf) ImageByHolder(img ImageHolder, x float64, y float64, rect Rect) 
 }
 
 func (gp *Fpdf) imageByHolder(img ImageHolder, x float64, y float64, rect Rect) error {
-	cacheImageIndex, err := gp.registerImageByHolder(img)
+	cacheImageIndex, _, err := gp.registerImageByHolder(img)
 	if err != nil {
 		return err
 	}
 
-	gp.getContent().AppendStreamImage(cacheImageIndex, x, y, rect)
+	gp.currentContent().AppendStreamImage(cacheImageIndex, x, y, rect)
 	return nil
 }
 
@@ -589,85 +576,74 @@ func (gp *Fpdf) useTemplateScaled(t Template, corner Point, size Rect) error {
 
 	templates := t.Templates()
 	for x := 0; x < len(templates); x++ {
-		if _, err := gp.registerTpl(templates[x]); err != nil {
+		if _, _, err := gp.registerTpl(templates[x]); err != nil {
 			return err
 		}
 	}
 
 	imgs := t.Images()
 	for x := 0; x < len(imgs); x++ {
-		if _, err := gp.registerImageByImageObj(imgs[x].image); err != nil {
+		if _, _, err := gp.registerImageByImageObj(imgs[x]); err != nil {
 			return err
 		}
 	}
 
 	fonts := t.Fonts()
 	for x := 0; x < len(fonts); x++ {
-		if err := gp.AddTTFFontBySubsetFont(fonts[x].subsetFont); err != nil {
+		if err := gp.AddTTFFontBySubsetFont(fonts[x]); err != nil {
 			return err
 		}
 	}
 
-	id, err := gp.registerTpl(t)
+	id, _, err := gp.registerTpl(t)
 	if err != nil {
 		return err
 	}
-
 	_, tSize := t.Size()
 	scalex := size.W / tSize.W
 	scaley := size.H / tSize.H
 
-	gp.getContent().AppendStreamUseTemplate(id, corner.X, corner.Y, size.H, scalex, scaley)
+	gp.currentContent().AppendStreamUseTemplate(id, corner.X, corner.Y, size.H, scalex, scaley)
 	return nil
 }
 
-func (gp *Fpdf) registerTpl(template Template) (string, error) {
+func (gp *Fpdf) registerTpl(template Template) (string, int, error) {
 	//create img object
 	tplObj := newTemplateObj(template, gp.protection(), func() *Fpdf {
 		return gp
 	})
-	id := tplObj.procsetIdentifier()
-
-	if gp.hasProcsetIndex(id, false) {
-		return id, nil
-	}
-
-	index := gp.addObj(tplObj)
-
-	procset := gp.getProcset()
-	procset.RealteXobjs = append(procset.RealteXobjs, RealteXobject{IndexOfObj: index, IdOfObj: id})
-
-	return id, nil
+	// I feel like there will be an error here at some point
+	a, b := gp.addProcsetObj(tplObj)
+	return a, b, nil
 }
 
-func (gp *Fpdf) getProcsetIndex(id string, isFont bool) int {
+func (gp *Fpdf) procsetIndex(id string, isFont bool) int {
 	if isFont {
-		return gp.getProcset().Realtes.getIndex(id)
+		return gp.procset().Realtes.getIndex(id)
 	}
-	return gp.getProcset().RealteXobjs.getIndex(id)
+	return gp.procset().RealteXobjs.getIndex(id)
 }
 
 func (gp *Fpdf) hasProcsetIndex(id string, isFont bool) bool {
-	return gp.getProcsetIndex(id, isFont) != -1
+	return gp.procsetIndex(id, isFont) != -1
 }
 
-func (gp *Fpdf) registerImageByHolder(img ImageHolder) (string, error) {
+func (gp *Fpdf) registerImageByHolder(img ImageHolder) (string, int, error) {
 	//create img object
 	imgobj, err := NewImageObj(img, gp.protection(), func() *Fpdf {
 		return gp
 	})
 
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 
 	return gp.registerImageByImageObj(imgobj)
 }
 
-func (gp *Fpdf) registerImageByImageObj(imgobj *ImageObj) (string, error) {
-	id := imgobj.procsetIdentifier()
-	if gp.hasProcsetIndex(id, false) {
-		return id, nil
+func (gp *Fpdf) registerImageByImageObj(imgobj *ImageObj) (string, int, error) {
+	if pid, id, ok := gp.pdfObjs.hasProcsetObj(imgobj); ok {
+		return pid, id, nil
 	}
 
 	// sanity check that these exist, they are removed on serialization
@@ -676,12 +652,10 @@ func (gp *Fpdf) registerImageByImageObj(imgobj *ImageObj) (string, error) {
 	}
 	imgobj.setProtection(gp.protection())
 
-	index := gp.addObj(imgobj)
-
 	if imgobj.haveSMask() {
 		smaskObj, err := imgobj.createSMask()
 		if err != nil {
-			return "", err
+			return "", 0, err
 		}
 		imgobj.imginfo.smarkObjID = gp.addObj(smaskObj)
 	}
@@ -689,7 +663,7 @@ func (gp *Fpdf) registerImageByImageObj(imgobj *ImageObj) (string, error) {
 	if imgobj.isColspaceIndexed() {
 		dRGB, err := imgobj.createDeviceRGB()
 		if err != nil {
-			return "", err
+			return "", 0, err
 		}
 		dRGB.getRoot = func() *Fpdf {
 			return gp
@@ -697,11 +671,8 @@ func (gp *Fpdf) registerImageByImageObj(imgobj *ImageObj) (string, error) {
 		imgobj.imginfo.deviceRGBObjID = gp.addObj(dRGB)
 	}
 
-	//ยัดรูป
-	procset := gp.getProcset()
-	procset.RealteXobjs = append(procset.RealteXobjs, RealteXobject{IndexOfObj: index, IdOfObj: id})
-
-	return id, nil
+	pid, id := gp.addProcsetObj(imgobj)
+	return pid, id, nil
 }
 
 //Image : draw image
@@ -750,7 +721,7 @@ func (gp *Fpdf) AddPage() {
 		po = gp.curr.pageOption
 	}
 
-	if cp := gp.getCurrentPage(); cp != nil && !cp.pageOption.IsEmpty() {
+	if cp := gp.currentPage(); cp != nil && !cp.pageOption.IsEmpty() {
 		po = cp.pageOption
 	}
 
@@ -770,15 +741,8 @@ func (gp *Fpdf) addPageWithOption(opt PageOption) {
 
 	page.setOption(gp.curr.pageOption.merge(opt))
 
-	page.ResourcesRelate = strconv.Itoa(gp.indexOfProcSet+1) + " 0 R"
-	index := gp.addObj(page)
-	if gp.indexOfFirstPageObj == -1 {
-		gp.indexOfFirstPageObj = index
-	}
-	gp.curr.IndexOfPageObj = index
-
-	//reset
-	gp.indexOfContent = -1
+	page.ResourcesRelate = fmt.Sprintf("%d 0 R", gp.pdfObjs.indexOfFirst(procSetType)+1)
+	gp.addObj(page)
 	gp.resetCurrXY()
 }
 
@@ -804,11 +768,8 @@ func New(opts ...PdfOption) (*Fpdf, error) {
 		return gp
 	})
 	gp.addObj(catalog)
-	gp.indexOfPagesObj = gp.addObj(pages)
-
-	// initiate the procset
-	gp.indexOfProcSet = -1
-	_ = gp.getProcset()
+	gp.addObj(pages)
+	_ = gp.pdfObjs.procset()
 
 	return gp, nil
 }
@@ -816,30 +777,13 @@ func New(opts ...PdfOption) (*Fpdf, error) {
 // SetFontWithStyle : set font style support Regular or Underline
 // for Bold|Italic should be loaded apropriate fonts with same styles defined
 func (gp *Fpdf) SetFontWithStyle(family string, style int, size float64) error {
-
-	found := false
-	i := 0
-	max := len(gp.pdfObjs)
-	for i < max {
-		if gp.pdfObjs[i].getType() == subsetFont {
-			obj := gp.pdfObjs[i]
-			sub, ok := obj.(*SubsetFontObj)
-			if ok {
-				if sub.GetFamily() == family && sub.GetTtfFontOption().Style == style&^Underline {
-					gp.curr.Font_Size = size
-					gp.curr.Font_Style = style
-					gp.curr.Font_FontCount = sub.CountOfFont
-					gp.curr.Font_ISubset = sub
-					found = true
-					break
-				}
-			}
-		}
-		i++
-	}
-
-	if !found {
-		return errors.New("not found font family")
+	if sub := gp.pdfObjs.getSubsetFontObjByFamilyAndStyle(family, style&^Underline); sub != nil {
+		gp.curr.Font_Size = size
+		gp.curr.Font_Style = style
+		gp.curr.Font_FontCount = sub.CountOfFont
+		gp.curr.Font_ISubset = sub
+	} else {
+		return fmt.Errorf("Could not find font with family: \"%s\" and style \"%d\"", family, style)
 	}
 
 	return nil
@@ -881,23 +825,11 @@ func (gp *Fpdf) compilePdf(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	max := len(gp.pdfObjs)
 	writer := newCountingWriter(w)
 	//io.WriteString(w, "%PDF-1.7\n\n")
 	fmt.Fprint(writer, "%PDF-1.7\n\n")
-	linelens := make([]int, max)
-	i := 0
-
-	for i < max {
-		objID := i + 1
-		linelens[i] = writer.offset
-		pdfObj := gp.pdfObjs[i]
-		fmt.Fprintf(writer, "%d 0 obj\n", objID)
-		pdfObj.write(writer, objID)
-		io.WriteString(writer, "endobj\n\n")
-		i++
-	}
-	gp.xref(writer, writer.offset, linelens, i)
+	linelens, err := gp.pdfObjs.write(writer)
+	gp.xref(writer, writer.offset, linelens, len(linelens))
 	return nil
 }
 
@@ -946,7 +878,7 @@ func (gp *Fpdf) Text(x, y float64, text string) error {
 		return err
 	}
 
-	err = gp.getContent().AppendStreamText(text)
+	err = gp.currentContent().AppendStreamText(text)
 	if err != nil {
 		return err
 	}
@@ -1043,7 +975,7 @@ func (gp *Fpdf) MultiCellOpts(w, h float64, txtStr string, opts CellOption) erro
 
 	for x := 0; x < len(lines); x++ {
 		if gp.curr.Y+h > gp.bottomMarginHeight() {
-			page := gp.getCurrentPage()
+			page := gp.currentPage()
 			gp.addPageWithOption(page.pageOption)
 		}
 
@@ -1133,7 +1065,7 @@ func (gp *Fpdf) cellWithOption(rect Rect, text string, opt CellOption) error {
 		return err
 	}
 
-	err = gp.getContent().AppendStreamSubsetFont(rect, text, opt)
+	err = gp.currentContent().AppendStreamSubsetFont(rect, text, opt)
 	return err
 }
 
@@ -1160,13 +1092,13 @@ func (gp *Fpdf) Cell(w, h float64, text string) error {
 //AddLink
 func (gp *Fpdf) AddExternalLink(url string, x, y, w, h float64) {
 	gp.UnitsToPointsVar(&x, &y, &w, &h)
-	page := gp.getCurrentPage()
+	page := gp.currentPage()
 	page.Links = append(page.Links, linkOption{x, gp.GetBoundaryHeight(PageBoundaryMedia) - y, w, h, url, ""})
 }
 
 func (gp *Fpdf) AddInternalLink(anchor string, x, y, w, h float64) {
 	gp.UnitsToPointsVar(&x, &y, &w, &h)
-	page := gp.getCurrentPage()
+	page := gp.currentPage()
 	page.Links = append(page.Links, linkOption{x, gp.GetBoundaryHeight(PageBoundaryMedia) - y, w, h, "", anchor})
 }
 
@@ -1197,9 +1129,7 @@ func (gp *Fpdf) AddTTFFontByReaderWithOption(family string, rd io.Reader, option
 }
 
 func (gp *Fpdf) AddTTFFontBySubsetFont(subsetFont *SubsetFontObj) error {
-	id := subsetFont.procsetIdentifier()
-	// font already exists, so lets skip it
-	if gp.hasProcsetIndex(id, true) {
+	if _, _, ok := gp.pdfObjs.hasProcsetObj(subsetFont); ok {
 		return nil
 	}
 
@@ -1237,13 +1167,7 @@ func (gp *Fpdf) AddTTFFontBySubsetFont(subsetFont *SubsetFontObj) error {
 
 	subsetFont.SetIndexObjCIDFont(cidindex)
 	subsetFont.SetIndexObjUnicodeMap(unicodeindex)
-	index := gp.addObj(subsetFont) //add หลังสุด
-
-	procset := gp.getProcset()
-	if !procset.Realtes.IsContainsFamilyAndStyle(subsetFont.Family, subsetFont.ttfFontOption.Style&^Underline) {
-		procset.Realtes = append(procset.Realtes, RelateFont{Family: subsetFont.Family, IndexOfObj: index, IdOfObj: id, Style: subsetFont.ttfFontOption.Style &^ Underline})
-		subsetFont.CountOfFont = gp.curr.CountOfFont
-	}
+	gp.addProcsetObj(subsetFont) //add หลังสุด
 	return nil
 }
 
@@ -1268,20 +1192,14 @@ func (gp *Fpdf) AddTTFFont(family string, ttfpath string) error {
 
 //KernOverride override kern value
 func (gp *Fpdf) KernOverride(family string, fn FuncKernOverride) error {
-	i := 0
-	max := len(gp.pdfObjs)
-	for i < max {
-		if gp.pdfObjs[i].getType() == subsetFont {
-			obj := gp.pdfObjs[i]
-			sub, ok := obj.(*SubsetFontObj)
-			if ok {
-				if sub.GetFamily() == family {
-					sub.funcKernOverride = fn
-					return nil
-				}
-			}
+	fonts := gp.pdfObjs.allOf(subsetFontType)
+	max := len(fonts)
+	for i := 0; i < max; i++ {
+		sub := fonts[i].(*SubsetFontObj)
+		if sub.GetFamily() == family {
+			sub.funcKernOverride = fn
+			return nil
 		}
-		i++
 	}
 	return errors.New("font family not found")
 }
@@ -1298,22 +1216,22 @@ func (gp *Fpdf) SetTextColor(r uint8, g uint8, b uint8) {
 
 //SetRBStrokeColor set the color for the stroke
 func (gp *Fpdf) SetRGBStrokeColor(r uint8, g uint8, b uint8) {
-	gp.getContent().AppendStreamSetRGBColorStroke(r, g, b)
+	gp.currentContent().AppendStreamSetRGBColorStroke(r, g, b)
 }
 
 //SetRGBFillColor set the color for the stroke
 func (gp *Fpdf) SetRGBFillColor(r uint8, g uint8, b uint8) {
-	gp.getContent().AppendStreamSetRGBColorFill(r, g, b)
+	gp.currentContent().AppendStreamSetRGBColorFill(r, g, b)
 }
 
 //SetCMYKStrokeColor set the color for the stroke
 func (gp *Fpdf) SetCMYKStrokeColor(c, m, y, k uint8) {
-	gp.getContent().AppendStreamSetCMYKColorStroke(c, m, y, k)
+	gp.currentContent().AppendStreamSetCMYKColorStroke(c, m, y, k)
 }
 
 //SetCMYKFillColor set the color for the stroke
 func (gp *Fpdf) SetCMYKFillColor(c, m, y, k uint8) {
-	gp.getContent().AppendStreamSetCMYKColorFill(c, m, y, k)
+	gp.currentContent().AppendStreamSetCMYKColorFill(c, m, y, k)
 }
 
 //MeasureTextWidth : measure Width of text (use current font)
@@ -1337,7 +1255,7 @@ func (gp *Fpdf) measureTextWidth(text string, units int) (float64, error) {
 // CurveTo : marks a curve from the x, y position to the new x, y position
 func (gp *Fpdf) CurveTo(cx, cy, x, y float64) {
 	gp.UnitsToPointsVar(&cx, &cy, &x, &y)
-	gp.getContent().AppendStreamCurve(cx, cy, x, y)
+	gp.currentContent().AppendStreamCurve(cx, cy, x, y)
 }
 
 // Curve draws a single-segment quadratic Bézier curve. The curve starts at
@@ -1355,9 +1273,9 @@ func (gp *Fpdf) CurveTo(cx, cy, x, y float64) {
 // The Circle() example demonstrates this method.
 func (gp *Fpdf) Curve(x0, y0, cx, cy, x1, y1 float64, styleStr string) {
 	gp.UnitsToPointsVar(&x0, &y0, &cx, &cy, &x1, &y1)
-	gp.getContent().AppendStreamPoint(x0, y0)
-	gp.getContent().AppendStreamCurve(cx, cy, x1, y1)
-	gp.getContent().AppendStreamDrawPath(styleStr)
+	gp.currentContent().AppendStreamPoint(x0, y0)
+	gp.currentContent().AppendStreamCurve(cx, cy, x1, y1)
+	gp.currentContent().AppendStreamDrawPath(styleStr)
 }
 
 /*
@@ -1372,12 +1290,12 @@ func (gp *Fpdf) SetProtection(permissions int, userPass []byte, ownerPass []byte
 // x, y is rotation center
 func (gp *Fpdf) Rotate(angle, x, y float64) {
 	gp.UnitsToPointsVar(&x, &y)
-	gp.getContent().appendRotate(angle, x, y)
+	gp.currentContent().appendRotate(angle, x, y)
 }
 
 //RotateReset reset rotate
 func (gp *Fpdf) RotateReset() {
-	gp.getContent().appendRotateReset()
+	gp.currentContent().appendRotateReset()
 }
 
 /*---private---*/
@@ -1401,9 +1319,9 @@ func (gp *Fpdf) init() {
 	gp.anchors = make(map[string]anchorOption)
 
 	//init index
-	gp.indexOfPagesObj = -1
-	gp.indexOfFirstPageObj = -1
-	gp.indexOfContent = -1
+	gp.pdfObjs = newPdfObjs(func() *Fpdf {
+		return gp
+	})
 
 	//No underline
 	//gp.IsUnderline = false
@@ -1435,39 +1353,21 @@ func (gp *Fpdf) prepare() {
 		gp.addObj(encObj)
 	}
 
-	if gp.indexOfPagesObj != -1 {
+	if pagesObj := gp.pdfObjs.getPages(); pagesObj != nil {
 		indexCurrPage := -1
-		var pagesObj *PagesObj
-		pagesObj = gp.pdfObjs[gp.indexOfPagesObj].(*PagesObj)
 		i := 0 //gp.indexOfFirstPageObj
-		max := len(gp.pdfObjs)
+		max := len(gp.pdfObjs.objs)
 		for i < max {
-			objtype := gp.pdfObjs[i].getType()
-			//fmt.Printf(" objtype = %s , %d \n", objtype , i)
-			if objtype == "Page" {
+			switch gp.pdfObjs.objs[i].getType() {
+			case pageType:
 				pagesObj.Kids = fmt.Sprintf("%s %d 0 R ", pagesObj.Kids, i+1)
 				pagesObj.PageCount++
 				indexCurrPage = i
-			} else if objtype == "Content" {
+			case contentType:
 				if indexCurrPage != -1 {
-					gp.pdfObjs[indexCurrPage].(*PageObj).Contents = fmt.Sprintf("%s %d 0 R ", gp.pdfObjs[indexCurrPage].(*PageObj).Contents, i+1)
+					gp.pdfObjs.getPage(indexCurrPage).Contents = fmt.Sprintf("%s %d 0 R ", gp.pdfObjs.getPage(indexCurrPage).Contents, i+1)
 				}
-			} else if objtype == "Font" {
-				tmpfont := gp.pdfObjs[i].(*FontObj)
-				j := 0
-				jmax := len(gp.indexEncodingObjFonts)
-				for j < jmax {
-					tmpencoding := gp.pdfObjs[gp.indexEncodingObjFonts[j]].(*EncodingObj).GetFont()
-					if tmpfont.Family == tmpencoding.GetFamily() { //ใส่ ข้อมูลของ embed font
-						tmpfont.IsEmbedFont = true
-						tmpfont.SetIndexObjEncoding(gp.indexEncodingObjFonts[j] + 1)
-						tmpfont.SetIndexObjWidth(gp.indexEncodingObjFonts[j] + 2)
-						tmpfont.SetIndexObjFontDescriptor(gp.indexEncodingObjFonts[j] + 3)
-						break
-					}
-					j++
-				}
-			} else if objtype == "Encryption" {
+			case encryptionType:
 				gp.encryptionObjID = i + 1
 			}
 			i++
@@ -1514,90 +1414,44 @@ func (gp *Fpdf) formatXrefline(n int) string {
 }
 
 func (gp *Fpdf) addObj(iobj IObj) int {
-	index := len(gp.pdfObjs)
-	gp.pdfObjs = append(gp.pdfObjs, iobj)
-	return index
+	return gp.pdfObjs.addObj(iobj)
 }
 
-func (gp *Fpdf) getContent() *ContentObj {
-	var content *ContentObj
-	if gp.indexOfContent <= -1 {
-		content = new(ContentObj)
-		content.pageIndex = gp.curr.IndexOfPageObj
-		content.init(func() *Fpdf {
-			return gp
-		})
-		gp.indexOfContent = gp.addObj(content)
-	} else {
-		content = gp.pdfObjs[gp.indexOfContent].(*ContentObj)
-	}
-	return content
+func (gp *Fpdf) addProcsetObj(iobj ProcsetIObj) (string, int) {
+	return gp.pdfObjs.addProcsetObj(iobj)
 }
 
-func (gp *Fpdf) getProcset() *ProcSetObj {
-	var procset *ProcSetObj
-	if gp.indexOfProcSet <= -1 {
-		procset = new(ProcSetObj)
-		procset.init(func() *Fpdf {
-			return gp
-		})
-		gp.indexOfProcSet = gp.addObj(procset)
-	} else {
-		procset = gp.pdfObjs[gp.indexOfProcSet].(*ProcSetObj)
-	}
-	return procset
+func (gp *Fpdf) currentPage() *PageObj {
+	return gp.pdfObjs.currentPage()
 }
 
-func (gp *Fpdf) getCurrentPage() *PageObj {
-	if gp.curr.IndexOfPageObj < 0 {
-		return nil
-	}
-
-	return gp.pdfObjs[gp.curr.IndexOfPageObj].(*PageObj)
+func (gp *Fpdf) currentContent() *ContentObj {
+	return gp.pdfObjs.currentContent()
 }
 
-func (gp *Fpdf) getAllContent() map[int]*ContentObj {
-	cos := make(map[int]*ContentObj)
-	for x := 0; x < len(gp.pdfObjs); x++ {
-		if content, ok := gp.pdfObjs[x].(*ContentObj); ok {
-			cos[x] = content
-		}
-	}
-
-	return cos
+func (gp *Fpdf) procset() *ProcSetObj {
+	return gp.pdfObjs.procset()
 }
 
-func (gp *Fpdf) getTemplateImages() []*TemplateImage {
-	ios := make([]*TemplateImage, 0)
-	for x := 0; x < len(gp.pdfObjs); x++ {
-		if img, ok := gp.pdfObjs[x].(*ImageObj); ok {
-			timg := NewTemplateImage(img)
-			ios = append(ios, timg)
-		}
-	}
-
-	return ios
+func (gp *Fpdf) getAllPages() []*PageObj {
+	return gp.pdfObjs.allPages()
 }
 
-func (gp *Fpdf) getTemplateFonts() []*TemplateFont {
-	tfs := make([]*TemplateFont, 0)
+func (gp *Fpdf) getAllImages() []*ImageObj {
+	return gp.pdfObjs.allImages()
+}
 
-	for x := 0; x < len(gp.pdfObjs); x++ {
-		if font, ok := gp.pdfObjs[x].(*SubsetFontObj); ok {
-			tfs = append(tfs, font.ToTemplateFont())
-		}
-	}
-
-	return tfs
+func (gp *Fpdf) getAllSubsetFonts() []*SubsetFontObj {
+	return gp.pdfObjs.allSubsetFonts()
 }
 
 func (gp *Fpdf) getTemplates() ([]Template, error) {
 	ts := make([]Template, 0)
+	templates := gp.pdfObjs.allOf(templateType)
 
-	for x := 0; x < len(gp.pdfObjs); x++ {
-		if template, ok := gp.pdfObjs[x].(*TemplateObj); ok {
-			ts = append(ts, template.ToTemplate())
-		}
+	for x := 0; x < len(templates); x++ {
+		template := templates[x].(*TemplateObj)
+		ts = append(ts, template.ToTemplate())
 	}
 
 	return ts, nil

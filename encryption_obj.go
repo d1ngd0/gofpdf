@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+const encryptionType = "Encryption"
+
 //EncryptionObj  encryption object res
 type EncryptionObj struct {
 	uValue []byte //U entry in pdf document
@@ -18,7 +20,7 @@ func (e *EncryptionObj) init(func() *Fpdf) {
 }
 
 func (e *EncryptionObj) getType() string {
-	return "Encryption"
+	return encryptionType
 }
 
 func (e *EncryptionObj) write(w io.Writer, objID int) error {

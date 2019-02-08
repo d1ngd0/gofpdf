@@ -5,6 +5,8 @@ import (
 	"io"
 )
 
+const procSetType = "ProcSet"
+
 //ProcSetObj pdf procSet object
 type ProcSetObj struct {
 	//Font
@@ -65,15 +67,18 @@ func (re RelateFonts) IsContainsFamily(family string) bool {
 
 // IsContainsFamilyAndStyle - checks if already exists font with same name and style
 func (re RelateFonts) IsContainsFamilyAndStyle(family string, style int) bool {
-	i := 0
+	rf := re.getFamilyAndStyle(family, style)
+	return rf != nil
+}
+
+func (re RelateFonts) getFamilyAndStyle(family string, style int) *RelateFont {
 	max := len(re)
-	for i < max {
+	for i := 0; i < max; i++ {
 		if re[i].Family == family && re[i].Style == style {
-			return true
+			return &re[i]
 		}
-		i++
 	}
-	return false
+	return nil
 }
 
 func (re RelateFonts) getIndex(id string) int {
