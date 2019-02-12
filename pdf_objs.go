@@ -258,10 +258,10 @@ func (p *pdfObjs) getSubsetFontObjByFamilyAndStyle(family string, style int) *Su
 		return nil
 	}
 
-	return p.subsetFontObjAt(rf.IndexOfObj)
+	return p.getSubsetFont(rf.IndexOfObj)
 }
 
-func (p *pdfObjs) subsetFontObjAt(index int) *SubsetFontObj {
+func (p *pdfObjs) getSubsetFont(index int) *SubsetFontObj {
 	if len(p.objs) <= index || index < 0 {
 		return nil
 	}

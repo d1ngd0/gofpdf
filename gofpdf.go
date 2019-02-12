@@ -1133,7 +1133,9 @@ func (gp *Fpdf) AddTTFFontByReaderWithOption(family string, rd io.Reader, option
 }
 
 func (gp *Fpdf) AddTTFFontBySubsetFont(subsetFont *SubsetFontObj) error {
-	if _, _, ok := gp.pdfObjs.hasProcsetObj(subsetFont); ok {
+	if _, id, ok := gp.pdfObjs.hasProcsetObj(subsetFont); ok {
+		actualSubsetFont := gp.pdfObjs.getSubsetFont(id)
+		actualSubsetFont.AddChars(subsetFont.CharacterToGlyphIndex.AllKeysString())
 		return nil
 	}
 
