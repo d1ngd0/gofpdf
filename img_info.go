@@ -1,6 +1,6 @@
 package gofpdf
 
-import "github.com/jung-kurt/gofpdf/geh"
+import "github.com/d1ngd0/gofpdf/geh"
 
 type imgInfo struct {
 	w, h int

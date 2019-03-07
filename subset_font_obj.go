@@ -7,8 +7,8 @@ import (
 
 	"io"
 
-	"github.com/jung-kurt/gofpdf/fontmaker/core"
-	"github.com/jung-kurt/gofpdf/geh"
+	"github.com/d1ngd0/gofpdf/fontmaker/core"
+	"github.com/d1ngd0/gofpdf/geh"
 )
 
 const subsetFontType = "SubsetFont"

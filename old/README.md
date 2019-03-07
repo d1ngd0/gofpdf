@@ -2,9 +2,9 @@
 
 ![gofpdf](image/logo_gofpdf.jpg?raw=true "gofpdf")
 
-[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/jung-kurt/gofpdf/master/license.txt)
-[![GoDoc](https://godoc.org/github.com/jung-kurt/gofpdf?status.svg)](https://godoc.org/github.com/jung-kurt/gofpdf)
-[![Build Status](https://travis-ci.org/jung-kurt/gofpdf.svg?branch=master)](https://travis-ci.org/jung-kurt/gofpdf)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/d1ngd0/gofpdf/master/license.txt)
+[![GoDoc](https://godoc.org/github.com/d1ngd0/gofpdf?status.svg)](https://godoc.org/github.com/d1ngd0/gofpdf)
+[![Build Status](https://travis-ci.org/d1ngd0/gofpdf.svg?branch=master)](https://travis-ci.org/d1ngd0/gofpdf)
 
 Package gofpdf implements a PDF document generator with high level support for
 text, drawing and images.
@@ -35,7 +35,7 @@ on Linux, Mac and Windows platforms.
 Like FPDF version 1.7, from which gofpdf is derived, this package does not yet
 support UTF-8 fonts. In particular, languages that require more than one code
 page such as Chinese, Japanese, and Arabic are not currently supported. This is
-explained in [issue 109](https://github.com/jung-kurt/gofpdf/issues/109). However, support is provided to automatically translate
+explained in [issue 109](https://github.com/d1ngd0/gofpdf/issues/109). However, support is provided to automatically translate
 UTF-8 runes to code page encodings for languages that have fewer than 256
 glyphs.
 
@@ -45,13 +45,13 @@ glyphs.
 To install the package on your system, run
 
 ```
-go get github.com/jung-kurt/gofpdf
+go get github.com/d1ngd0/gofpdf
 ```
 
 Later, to receive updates, run
 
 ```
-go get -u -v github.com/jung-kurt/gofpdf/...
+go get -u -v github.com/d1ngd0/gofpdf/...
 ```
 
 ## Quick Start
@@ -67,7 +67,7 @@ pdf.Cell(40, 10, "Hello, world")
 err := pdf.OutputFileAndClose("hello.pdf")
 ```
 
-See the functions in the [fpdf_test.go](https://github.com/jung-kurt/gofpdf/blob/master/fpdf_test.go) file (shown as examples in this
+See the functions in the [fpdf_test.go](https://github.com/d1ngd0/gofpdf/blob/master/fpdf_test.go) file (shown as examples in this
 documentation) for more advanced PDF examples.
 
 ## Errors
@@ -111,7 +111,7 @@ example PDFs. These can be found in the gofpdf/pdf directory after the tests
 complete.
 
 Please note that these examples run in the context of a test. In order run an
-example as a standalone application, you'll need to examine [fpdf_test.go](https://github.com/jung-kurt/gofpdf/blob/master/fpdf_test.go) for
+example as a standalone application, you'll need to examine [fpdf_test.go](https://github.com/d1ngd0/gofpdf/blob/master/fpdf_test.go) for
 some helper routines, for example exampleFilename() and summary().
 
 Example PDFs can be compared with reference copies in order to verify that they
@@ -173,7 +173,7 @@ Here are guidelines for making submissions. Your change should
 * be compatible with the MIT License
 * be properly documented
 * be formatted with `go fmt`
-* include an example in [fpdf_test.go](https://github.com/jung-kurt/gofpdf/blob/master/fpdf_test.go) if appropriate
+* include an example in [fpdf_test.go](https://github.com/d1ngd0/gofpdf/blob/master/fpdf_test.go) if appropriate
 * conform to the standards of [golint](https://github.com/golang/lint) and
 [go vet](https://godoc.org/golang.org/x/tools/cmd/vet), that is, `golint .` and
 `go vet .` should not generate any warnings

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/jung-kurt/gofpdf/bp"
+	"github.com/d1ngd0/gofpdf/bp"
 )
 
 //UnicodeMap unicode map

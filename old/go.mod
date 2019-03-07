@@ -1,1 +1,1 @@
-module github.com/jung-kurt/gofpdf
+module github.com/d1ngd0/gofpdf

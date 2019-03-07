@@ -12,12 +12,12 @@ cat README.md | tr '\n' '\v' | sed \
   -e 's/FPDF.library.(\(http:\/\/www\.fpdf\.org\/\))/[FPDF](\1) library/g' \
   -e 's/original.FPDF.library/original [FPDF](http:\/\/www.fpdf.org\/) library/g' \
   -e 's/\(Effective.Go\)/[\1](https:\/\/golang.org\/doc\/effective_go.html)/g' \
-  -e 's/\(fpdf_test.go\)/[\1](https:\/\/github.com\/jung-kurt\/gofpdf\/blob\/master\/fpdf_test.go)/g' \
+  -e 's/\(fpdf_test.go\)/[\1](https:\/\/github.com\/d1ngd0\/gofpdf\/blob\/master\/fpdf_test.go)/g' \
   -e 's/golint.(\(https:\/\/github\.com\/golang\/lint\))/[golint](\1)/g' \
   -e 's/go.vet.(\(https:\/\/godoc\.org\/golang\.org\/x\/tools\/cmd\/vet\))/[go vet](\1)/g' \
   -e 's/test.coverage.(\(https:\/\/blog\.golang\.org\/cover\))/[test coverage](\1)/g' \
   -e 's/Pull.requests.(\(https:\/\/help\.github\.com\/articles\/using\-pull\-requests\/\))/[Pull requests](\1)/g' \
   -e 's/Your change should\v/Your change should\v\v/g' \
-  -e 's/issue 109/[issue 109](https:\/\/github.com\/jung-kurt\/gofpdf\/issues\/109)/g' \
+  -e 's/issue 109/[issue 109](https:\/\/github.com\/d1ngd0\/gofpdf\/issues\/109)/g' \
   | tr '\v' '\n' > _0 
 mv _0 README.md

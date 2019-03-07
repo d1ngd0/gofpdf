@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/jung-kurt/gofpdf"
+	"github.com/d1ngd0/gofpdf"
 	"os"
 )
 
