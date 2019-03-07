@@ -28,7 +28,7 @@ type cacheContentClipRect struct {
 }
 
 func (c *cacheContentClipRect) write(w io.Writer, protection *PDFProtection) error {
-	fmt.Fprint(w, "%.2f %.2f %.2f %.2f re W %s\n", c.x, c.pageHeight-c.y, c.w, -c.h, c.style)
+	fmt.Fprintf(w, "%.2f %.2f %.2f %.2f re W %s\n", c.x, c.pageHeight-c.y, c.w, -c.h, c.style)
 	return nil
 }
 
@@ -40,7 +40,7 @@ type cacheContentClipText struct {
 }
 
 func (c *cacheContentClipText) write(w io.Writer, protection *PDFProtection) error {
-	fmt.Fprint(w, "BT %.5f %.5f Td %d Tr (%s) Tj ET\n", c.x, c.pageHeight-c.y, c.style, c.escape(c.txtStr))
+	fmt.Fprintf(w, "BT %.5f %.5f Td %d Tr (%s) Tj ET\n", c.x, c.pageHeight-c.y, c.style, c.escape(c.txtStr))
 	return nil
 }
 

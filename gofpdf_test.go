@@ -15,7 +15,10 @@ func BenchmarkPdfWithImageHolder(b *testing.B) {
 		return
 	}
 
-	pdf := New(Config{PageSize: &Rect{W: 595.28, H: 841.89}}) //595.28, 841.89 = A4
+	pdf, err := New(PdfOptionPageSize(595.28, 841.89)) //595.28, 841.89 = A4
+	if err != nil {
+		b.Error(err)
+	}
 	pdf.AddPage()
 	err = pdf.AddTTFFont("loma", "./test/res/times.ttf")
 	if err != nil {
@@ -41,12 +44,12 @@ func BenchmarkPdfWithImageHolder(b *testing.B) {
 		return
 	}
 	for i := 0; i < b.N; i++ {
-		pdf.ImageByHolder(imgH, 20.0, float64(i)*2.0, nil)
+		pdf.ImageByHolder(imgH, 20.0, float64(i)*2.0, Rect{W: 20, H: 20})
 	}
 
 	pdf.SetX(250)
 	pdf.SetY(200)
-	pdf.Cell(nil, "gopher and gopher")
+	pdf.Cell(10, 10, "gopher and gopher")
 
 	pdf.WritePdf("./test/out/image_bench.pdf")
 }
@@ -66,7 +69,10 @@ func TestPdfWithImageHolder(t *testing.T) {
 		return
 	}
 
-	pdf := New(Config{PageSize: &Rect{W: 595.28, H: 841.89}}) //595.28, 841.89 = A4
+	pdf, err := New(PdfOptionPageSize(595.28, 841.89)) //595.28, 841.89 = A4
+	if err != nil {
+		t.Error(err)
+	}
 	pdf.AddPage()
 	err = pdf.AddTTFFont("loma", "./test/res/times.ttf")
 	if err != nil {
@@ -92,13 +98,13 @@ func TestPdfWithImageHolder(t *testing.T) {
 		return
 	}
 
-	err = pdf.ImageByHolder(imgH, 20.0, 20, nil)
+	err = pdf.ImageByHolder(imgH, 20.0, 20, Rect{W: 20, H: 20})
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	err = pdf.ImageByHolder(imgH, 20.0, 200, nil)
+	err = pdf.ImageByHolder(imgH, 20.0, 200, Rect{W: 20, H: 20})
 	if err != nil {
 		t.Error(err)
 		return
@@ -106,7 +112,7 @@ func TestPdfWithImageHolder(t *testing.T) {
 
 	pdf.SetX(250)
 	pdf.SetY(200)
-	pdf.Cell(nil, "gopher and gopher")
+	pdf.Cell(20, 20, "gopher and gopher")
 
 	pdf.WritePdf("./test/out/image_test.pdf")
 }
