@@ -67,9 +67,9 @@ func (po *PageOption) GetBoundary(t int) (pb *PageBoundary) {
 
 func (po PageOption) merge(po2 PageOption) PageOption {
 	var pageOpt PageOption
-	copy(pageOpt.PageBoundaries, po2.PageBoundaries)
-	for x := 0; x < len(po.PageBoundaries); x++ {
-		pageOpt.AddPageBoundary(po.PageBoundaries[x])
+	copy(pageOpt.PageBoundaries, po.PageBoundaries)
+	for x := 0; x < len(po2.PageBoundaries); x++ {
+		pageOpt.AddPageBoundary(po2.PageBoundaries[x])
 	}
 	return pageOpt
 }
