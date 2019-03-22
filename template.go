@@ -106,7 +106,7 @@ func newTpl(corner Point, opts []PdfOption, fn TplFunc, copyFrom *Fpdf) (Templat
 	return gp.Template(corner)
 }
 
-func (gp *Fpdf) Template(corner Point) (Template, error) {
+func (gp *Fpdf) Template(corner Point) (*FpdfTpl, error) {
 	var err error
 	pages := gp.getAllPages()
 	numPages := len(pages)
