@@ -970,6 +970,10 @@ func (gp *Fpdf) MultiCellOpts(w, h float64, txtStr string, opts CellOption) erro
 		w = gp.rightMarginWidth(gp.curr.X)
 	}
 
+	if w <= 0 {
+		return errors.New("Cell has a zero or negative width, something is wrong")
+	}
+
 	lines, err := gp.splitLines(txtStr, w)
 	if err != nil {
 		return err
