@@ -10,6 +10,6 @@ type cacheContentJoinStyle struct {
 }
 
 func (c *cacheContentJoinStyle) write(w io.Writer, protection *PDFProtection) error {
-	fmt.Fprintf(w, "%d j", c.style)
+	fmt.Fprintf(w, "%d j\n", c.style)
 	return nil
 }

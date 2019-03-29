@@ -137,6 +137,10 @@ func (s *SubsetFontObj) SetTTFByReader(rd io.Reader) error {
 
 //AddChars add char to map CharacterToGlyphIndex
 func (s *SubsetFontObj) AddChars(txt string) error {
+	if s == nil {
+		return nil
+	}
+
 	s.characterMutex.Lock()
 	defer s.characterMutex.Unlock()
 

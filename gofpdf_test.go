@@ -7,6 +7,33 @@ import (
 	"testing"
 )
 
+func TestAutoWidth(t *testing.T) {
+	pdf, err := New(PdfOptionPageSize(250, 250))
+	if err != nil {
+		t.Error(err)
+	}
+
+	pdf.AddPage()
+
+	if err := pdf.AddTTFFont("times", "test/res/times.ttf"); err != nil {
+		t.Error(err)
+	}
+
+	if err := pdf.SetFont("times", "", 12); err != nil {
+		t.Error(err)
+	}
+
+	err = pdf.MultiCellOpts(0, 10, "something here", CellOption{
+		Align:  Top | Left,
+		Border: 0,
+		Float:  Left,
+	})
+
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func BenchmarkPdfWithImageHolder(b *testing.B) {
 
 	err := initTesting()
