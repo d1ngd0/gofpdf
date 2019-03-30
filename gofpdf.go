@@ -229,6 +229,125 @@ func (gp *Fpdf) Beziergon(pts Points, styleStr string) error {
 	return nil
 }
 
+// Beziertext writes text along a path defined by a series of cubic Bézier
+// curve segments. Font size is reduced if the text exceeds avaiable arc length.
+func (gp *Fpdf) Beziertext(pts Points, startBracket, endBracket float64, text string, opt CellOption) error {
+	points := pts.ToPoints(gp.curr.unit)
+
+	if len(points) < 4 {
+		return fmt.Errorf("the number of points can not be less than 4. %d found", len(points))
+	}
+
+	bs := NewBezierSpline(points)
+
+	numrunes := len([]rune(text))
+	err := gp.curr.Font_ISubset.AddChars(text)
+	if err != nil {
+		return err
+	}
+
+	pathlength := bs.Length() / 72.0
+	if startBracket < 0.0 {
+		startBracket = 0.0
+	}
+	if endBracket > pathlength || endBracket <= startBracket {
+		endBracket = pathlength
+	}
+	// Make sure width doesnt exceed brackets or spline endpoints
+	blength := endBracket - startBracket
+	var textwidth float64
+	for {
+		textwidth, err = gp.MeasureTextWidth(text)
+		if err != nil {
+			return err
+		}
+		if textwidth <= blength {
+			break
+		}
+		// Reduce font size to fit
+		r := blength / textwidth
+		r, err = strconv.ParseFloat(fmt.Sprintf("%.3f", r), 64)
+		r = r - 0.001
+		if r < 0.0 {
+			r = 0.0
+		}
+		gp.curr.Font_Size = gp.curr.Font_Size * r
+	}
+
+	widths := make([]float64, numrunes + 1)
+	midpts := make([]float64, numrunes)
+	srunes := make([]string, numrunes)
+	x := ""
+	i := 0 // Explicit counter gives rune index instead of byte index
+	for _, c := range text {
+	widths[0] = 0.0
+		srunes[i] = string(c)
+		x += srunes[i]
+		v, err := gp.MeasureTextWidth(x)
+		if err != nil {
+			return err
+		}
+		widths[i + 1] = v
+		midpts[i] = (widths[i] + widths[i + 1]) / 2.0
+		i++
+	}
+
+	n := bezierSampleCardinality
+	b := int(startBracket / pathlength * float64(n))
+	c := int((pathlength - endBracket) / pathlength * float64(n))
+	frac := textwidth / pathlength
+	m := int(frac * float64(n))
+	g := n - m - b - c
+	tsubsUniform := make([]BezierPoint, n)
+	bs.UniformSplineWithNormals(tsubsUniform)
+	tsubsSelected := make([]BezierPoint, numrunes)
+	for i, p := range midpts {
+		// Select point from sample, taking into account bracket and alignment
+		f := 0
+		switch opt.Align {
+		case Center, Center | Top, Center | Bottom, Center | Middle:
+			f = g / 2
+		case Right, Right | Top, Right | Bottom, Right | Middle:
+			f = g
+		}
+		j := b + f + int((p / textwidth) * float64(m))
+		if j < 0 {
+			j = 0
+		}
+		if j >= len(tsubsUniform) {
+			j = len(tsubsUniform) - 1
+		}
+		tsubsSelected[i] = tsubsUniform[j]
+	}
+
+	height := gp.curr.Font_Size
+	descent := gp.curr.Font_ISubset.ttfp.TypoDescender()
+	upm := gp.curr.Font_ISubset.ttfp.UnitsPerEm()
+	cellopt := CellOption{
+		Align:  Center,
+		Border: opt.Border,
+		Float:  opt.Float,
+	}
+	for i, v := range tsubsSelected {
+		gp.Rotate(v.normaldir, v.pt.X / 72.0, v.pt.Y / 72.0)
+		width := widths[i + 1] - widths[i] * 72.0
+		rect := Rect{W: width, H: height}
+		gp.curr.X, gp.curr.Y = v.pt.X - (width / 2.0), v.pt.Y - height - // Offset cell origin
+													 float64(descent) / float64(upm) * height  // Move down to baseline
+		t := srunes[i]
+		err = gp.curr.Font_ISubset.AddChars(t)
+		if err != nil {
+			return err
+		}
+		err = gp.currentContent().AppendStreamSubsetFont(rect, t, cellopt)
+		if err != nil {
+			return err
+		}
+		gp.RotateReset()
+	}
+	return nil
+}
+
 // CurveBezierCubic draws a single-segment cubic Bézier curve. The curve starts at
 // the point (x0, y0) and ends at the point (x1, y1). The control points (cx0,
 // cy0) and (cx1, cy1) specify the curvature. At the start point, the curve is
