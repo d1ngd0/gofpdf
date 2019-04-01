@@ -274,21 +274,19 @@ func (gp *Fpdf) Beziertext(pts Points, startBracket, endBracket float64, text st
 		gp.curr.Font_Size = gp.curr.Font_Size * r
 	}
 
-	widths := make([]float64, numrunes + 1)
-	midpts := make([]float64, numrunes)
+	endpts := make([]float64, numrunes + 1)
 	srunes := make([]string, numrunes)
 	x := ""
 	i := 0 // Explicit counter gives rune index instead of byte index
+	endpts[0] = 0.0
 	for _, c := range text {
-	widths[0] = 0.0
 		srunes[i] = string(c)
 		x += srunes[i]
 		v, err := gp.MeasureTextWidth(x)
 		if err != nil {
 			return err
 		}
-		widths[i + 1] = v
-		midpts[i] = (widths[i] + widths[i + 1]) / 2.0
+		endpts[i + 1] = v
 		i++
 	}
 
@@ -298,10 +296,9 @@ func (gp *Fpdf) Beziertext(pts Points, startBracket, endBracket float64, text st
 	frac := textwidth / pathlength
 	m := int(frac * float64(n))
 	g := n - m - b - c
-	tsubsUniform := make([]BezierPoint, n)
-	bs.UniformSplineWithNormals(tsubsUniform)
-	tsubsSelected := make([]BezierPoint, numrunes)
-	for i, p := range midpts {
+	tsubsUniform := bs.SampleByArcLength(bezierSampleCardinality)
+	selected := make([]BezierPoint, numrunes)
+	for i:= 0; i < numrunes; i++ {
 		// Select point from sample, taking into account bracket and alignment
 		f := 0
 		switch opt.Align {
@@ -310,14 +307,16 @@ func (gp *Fpdf) Beziertext(pts Points, startBracket, endBracket float64, text st
 		case Right, Right | Top, Right | Bottom, Right | Middle:
 			f = g
 		}
+		p := (endpts[i] + endpts[i + 1]) / 2.0 // Midpoint of rune
 		j := b + f + int((p / textwidth) * float64(m))
 		if j < 0 {
 			j = 0
 		}
-		if j >= len(tsubsUniform) {
-			j = len(tsubsUniform) - 1
+		if j >= n {
+			j = n - 1
 		}
-		tsubsSelected[i] = tsubsUniform[j]
+		curveIndex, paramValue := tsubsUniform.At(j)
+		selected[i] = BezierPoint{bs[curveIndex].At(paramValue), bs[curveIndex].NormalDegrees(paramValue)}
 	}
 
 	height := gp.curr.Font_Size
@@ -328,9 +327,9 @@ func (gp *Fpdf) Beziertext(pts Points, startBracket, endBracket float64, text st
 		Border: opt.Border,
 		Float:  opt.Float,
 	}
-	for i, v := range tsubsSelected {
+	for i, v := range selected {
 		gp.Rotate(v.normaldir, v.pt.X / 72.0, v.pt.Y / 72.0)
-		width := widths[i + 1] - widths[i] * 72.0
+		width := endpts[i + 1] - endpts[i] * 72.0
 		rect := Rect{W: width, H: height}
 		gp.curr.X, gp.curr.Y = v.pt.X - (width / 2.0), v.pt.Y - height - // Offset cell origin
 													 float64(descent) / float64(upm) * height  // Move down to baseline

@@ -10,6 +10,8 @@ type BezierCurve struct {
 
 type BezierSpline []BezierCurve
 
+type BezierSplineSample [][]float64
+
 type BezierPoint struct{
 	pt Point
 	normaldir float64
@@ -73,8 +75,8 @@ func Distance(p0, p1 Point) float64 {
 	return math.Sqrt(math.Pow(p1.Y - p0.Y, 2) + math.Pow(p1.X - p0.X, 2))
 }
 
-func (bc BezierCurve) UniformCurveWithNormals(p []BezierPoint) []BezierPoint {
-	n := len(p)
+func (bc BezierCurve) SampleByArcLength(sample []float64) []float64 {
+	n := len(sample)
 	d := 0.0
 	curve := make([]Point, n)
 	// Approximate the curve by a polyline
@@ -89,7 +91,7 @@ func (bc BezierCurve) UniformCurveWithNormals(p []BezierPoint) []BezierPoint {
 	dd := d / float64(n - 1)
 	// Walk the polyline with even steps
 	stride := dd
-	p[0] = BezierPoint{polyline[0], bc.NormalDegrees(0.0)}
+	sample[0] = 0.0
 	i := 1
 	for len(polyline) > 1 {
 		if distances[0] >= stride {
@@ -97,9 +99,7 @@ func (bc BezierCurve) UniformCurveWithNormals(p []BezierPoint) []BezierPoint {
 			t0 := float64(n - len(polyline)) / float64(n - 1)
 			t1 := float64(n - len(polyline) + 1) / float64(n - 1)
 			t := t0 + frac * (t1 - t0)
-			pt := bc.At(t)
-			degrees := bc.NormalDegrees(t)
-			p[i] = BezierPoint{pt, degrees}
+			sample[i] = t
 			i++
 			distances[0] -= stride
 			stride = dd
@@ -109,10 +109,11 @@ func (bc BezierCurve) UniformCurveWithNormals(p []BezierPoint) []BezierPoint {
 			distances = distances[1:]
 		}
 	}
-	if i < len(p) {
-		p[i] = BezierPoint{polyline[0], bc.NormalDegrees(1.0)}
+	for i < len(sample) {
+		sample[i] = 1.0
+		i++
 	}
-	return p
+	return sample
 }
 
 func (bc BezierCurve) Tangent(t float64) Point {
@@ -128,15 +129,14 @@ func (bc BezierCurve) NormalDegrees(t float64) float64 {
 }
 
 func (bc BezierCurve) Dx(t float64) float64 {
-  return 3.0 * bc.Cx1 * t* t + 2.0 * bc.Cx2 * t + bc.Cx3
+  return 3.0 * bc.Cx1 * t * t + 2.0 * bc.Cx2 * t + bc.Cx3
 }
 
 func (bc BezierCurve) Dy(t float64) float64 {
-  return 3.0 * bc.Cy1 * t* t + 2.0 * bc.Cy2 * t + bc.Cy3
+  return 3.0 * bc.Cy1 * t * t + 2.0 * bc.Cy2 * t + bc.Cy3
 }
 
-func (bs BezierSpline) UniformSplineWithNormals(p []BezierPoint) []BezierPoint {
-	n := len(p)
+func (bs BezierSpline) SampleByArcLength(n int) BezierSplineSample {
 	totalLength := bs.Length()
 	clens := make([]int, len(bs))
 	for i, bc := range bs {
@@ -149,18 +149,27 @@ func (bs BezierSpline) UniformSplineWithNormals(p []BezierPoint) []BezierPoint {
 		n -= clens[i] - 1
 		totalLength -= bc.Length
 	}
-	s := make([]BezierPoint, 0)
+	csamples := make([][]float64, len(bs))
 	for i, cn := range clens {
-		curve := make([]BezierPoint, cn)
-		curve = bs[i].UniformCurveWithNormals(curve)
+		curve := make([]float64, cn)
+		curve = bs[i].SampleByArcLength(curve)
 		if i < len(clens) - 1 && len(curve) > 0 {
 			// Omit the final point of each but the last curve
 			curve = curve[:len(curve) - 1]
 		}
-		s = append(s, curve...)
+		csamples[i] = curve
 	}
-	copy(p[:], s)
-	return p
+	return csamples
+}
+
+func (bss BezierSplineSample) At(k int) (int, float64) {
+	for i, c := range bss {
+		if k < len(c) {
+			return i, c[k]
+		}
+		k -= len(c)
+	}
+	return len(bss) - 1, 1.0
 }
 
 func (bs BezierSpline) Length() float64 {
