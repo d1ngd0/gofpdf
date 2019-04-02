@@ -704,7 +704,7 @@ func (gp *Fpdf) useTemplateScaled(t Template, corner Point, size Rect) error {
 
 	fonts := t.Fonts()
 	for x := 0; x < len(fonts); x++ {
-		if err := gp.AddTTFFontBySubsetFont(fonts[x]); err != nil {
+		if err := gp.AddTTFFontBySubsetFont(fonts[x].Family, fonts[x]); err != nil {
 			return err
 		}
 	}
@@ -1237,33 +1237,35 @@ func (gp *Fpdf) AddTTFFontByReader(family string, rd io.Reader) error {
 
 //AddTTFFontByReaderWithOption add font file
 func (gp *Fpdf) AddTTFFontByReaderWithOption(family string, rd io.Reader, option TtfOption) error {
-	subsetFont, err := SubsetFontByReaderWithOption(family, rd, option)
+	subsetFont, err := SubsetFontByReaderWithOption(rd, option)
 	if err != nil {
 		return err
 	}
 
-	return gp.AddTTFFontBySubsetFont(subsetFont)
+	return gp.AddTTFFontBySubsetFont(family, subsetFont)
 }
 
-func SubsetFontByReader(family string, rd io.Reader) (*SubsetFontObj, error) {
-	return SubsetFontByReaderWithOption(family, rd, defaultTtfFontOption())
+func SubsetFontByReader(rd io.Reader) (*SubsetFontObj, error) {
+
+	return SubsetFontByReaderWithOption(rd, defaultTtfFontOption())
 }
 
-func SubsetFontByReaderWithOption(family string, rd io.Reader, option TtfOption) (*SubsetFontObj, error) {
+func SubsetFontByReaderWithOption(rd io.Reader, option TtfOption) (*SubsetFontObj, error) {
 	subsetFont := new(SubsetFontObj)
 	subsetFont.SetTtfFontOption(option)
-	subsetFont.SetFamily(family)
 	subsetFont.CharacterToGlyphIndex = NewMapOfCharacterToGlyphIndex()
 	err := subsetFont.SetTTFByReader(rd)
 	return subsetFont, err
 }
 
-func (gp *Fpdf) AddTTFFontBySubsetFont(subsetFont *SubsetFontObj) error {
+func (gp *Fpdf) AddTTFFontBySubsetFont(family string, subsetFont *SubsetFontObj) error {
 	if _, id, ok := gp.pdfObjs.hasProcsetObj(subsetFont); ok {
 		actualSubsetFont := gp.pdfObjs.getSubsetFont(id)
 		actualSubsetFont.AddChars(subsetFont.CharacterToGlyphIndex.AllKeysString())
 		return nil
 	}
+
+	subsetFont.SetFamily(family)
 
 	subsetFont.init(func() *Fpdf {
 		return gp

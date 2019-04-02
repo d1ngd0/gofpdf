@@ -15,7 +15,7 @@ func TestFontSerialization(t *testing.T) {
 		t.Error(err)
 	}
 
-	font, err := SubsetFontByReader("test", ttfr)
+	font, err := SubsetFontByReader(ttfr)
 	if err != nil {
 		t.Error(err)
 	}
@@ -38,7 +38,7 @@ func TestFontSerialization(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err := pdf.AddTTFFontBySubsetFont(font2); err != nil {
+	if err := pdf.AddTTFFontBySubsetFont("test", font2); err != nil {
 		t.Error(err)
 	}
 }
