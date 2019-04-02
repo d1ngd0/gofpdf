@@ -1,11 +1,80 @@
 package gofpdf
 
 import (
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"testing"
 )
+
+func TestTemplateAutoPage(t *testing.T) {
+	pdf, err := New(
+		PdfOptionUnit(Unit_IN),
+		PdfOptionPageSize(12, 12),
+	)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	pdf.AddPage()
+	pdf.AddTTFFont("a", "test/res/times.ttf")
+	pdf.SetFont("a", "", 12)
+	var b string
+
+	for x := 0; x < 10000; x++ {
+		b = fmt.Sprintf("something %s", b)
+	}
+
+	pdf.WriteText(12, b)
+
+	tmpl, err := pdf.Template(Point{})
+	if err != nil {
+		t.Error(err)
+	}
+
+	bb, err := tmpl.Serialize()
+	if err != nil {
+		t.Error(err)
+	}
+
+	tmpl2, err := DeserializeTemplate(bb)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if tmpl2.NumPages() != 2 {
+		t.Error(fmt.Errorf("number of pages %d", tmpl.NumPages()))
+	}
+}
+
+func TestTemplatePages(t *testing.T) {
+	pdf, err := New(
+		PdfOptionUnit(Unit_IN),
+		PdfOptionPageSize(12, 12),
+	)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	pdf.AddPage()
+	pdf.Line(0, 0, 12, 12)
+
+	pdf.AddPage()
+	pdf.Line(0, 0, 12, 12)
+
+	tmpl, err := pdf.Template(Point{})
+	if err != nil {
+		t.Error(err)
+	}
+
+	if tmpl.NumPages() != 2 {
+		t.Error(errors.New("there should be more pages"))
+	}
+}
 
 func TestAutoWidth(t *testing.T) {
 	pdf, err := New(PdfOptionPageSize(250, 250))
