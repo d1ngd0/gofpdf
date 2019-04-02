@@ -1,9 +1,10 @@
 package gofpdf
 
 import (
+	"bytes"
+	"encoding/gob"
 	"errors"
 	"fmt"
-	"sync"
 
 	"io"
 
@@ -27,7 +28,20 @@ type SubsetFontObj struct {
 	indexObjUnicodeMap    int
 	ttfFontOption         TtfOption
 	funcKernOverride      FuncKernOverride
-	characterMutex        sync.RWMutex
+}
+
+func (s *SubsetFontObj) Serialize() ([]byte, error) {
+	var b bytes.Buffer
+	enc := gob.NewEncoder(&b)
+	err := enc.Encode(s)
+	return b.Bytes(), err
+}
+
+func DeserializeSubsetFont(b []byte) (*SubsetFontObj, error) {
+	var sf SubsetFontObj
+	dec := gob.NewDecoder(bytes.NewReader(b))
+	err := dec.Decode(&sf)
+	return &sf, err
 }
 
 func (s *SubsetFontObj) GobEncode() ([]byte, error) {
@@ -40,14 +54,15 @@ func (s *SubsetFontObj) GobDecode(buf []byte) error {
 
 func (s *SubsetFontObj) copy() *SubsetFontObj {
 	subFont := *s
-	s.characterMutex.RLock()
 	subFont.CharacterToGlyphIndex = subFont.CharacterToGlyphIndex.copy()
-	s.characterMutex.RUnlock()
 	return &subFont
 }
 
 func (s *SubsetFontObj) init(funcGetRoot func() *Fpdf) {
-	s.CharacterToGlyphIndex = NewMapOfCharacterToGlyphIndex() //make(map[rune]uint)
+	if s.CharacterToGlyphIndex == nil {
+		s.CharacterToGlyphIndex = NewMapOfCharacterToGlyphIndex()
+	}
+
 	s.funcKernOverride = nil
 }
 
@@ -141,9 +156,6 @@ func (s *SubsetFontObj) AddChars(txt string) error {
 		return nil
 	}
 
-	s.characterMutex.Lock()
-	defer s.characterMutex.Unlock()
-
 	for _, runeValue := range txt {
 		if s.CharacterToGlyphIndex.KeyExists(runeValue) {
 			continue
@@ -159,9 +171,6 @@ func (s *SubsetFontObj) AddChars(txt string) error {
 
 //CharIndex index of char in glyph table
 func (s *SubsetFontObj) CharIndex(r rune) (uint, error) {
-	s.characterMutex.RLock()
-	defer s.characterMutex.RUnlock()
-
 	glyIndex, ok := s.CharacterToGlyphIndex.Val(r)
 	if ok {
 		return glyIndex, nil
@@ -171,9 +180,6 @@ func (s *SubsetFontObj) CharIndex(r rune) (uint, error) {
 
 //CharWidth with of char
 func (s *SubsetFontObj) CharWidth(r rune) (uint, error) {
-	s.characterMutex.RLock()
-	defer s.characterMutex.RUnlock()
-
 	glyIndex, ok := s.CharacterToGlyphIndex.Val(r)
 	if ok {
 		return s.GlyphIndexToPdfWidth(glyIndex), nil
@@ -295,7 +301,5 @@ func (s *SubsetFontObj) procsetIdentifier() string {
 
 // ToTemplateFont turns the subsetFontObject into a Template Font
 func (s *SubsetFontObj) ToTemplateFont() *TemplateFont {
-	s.characterMutex.RLock()
-	defer s.characterMutex.RUnlock()
 	return NewTemplateFont(s)
 }

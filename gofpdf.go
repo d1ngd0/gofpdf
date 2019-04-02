@@ -1237,18 +1237,25 @@ func (gp *Fpdf) AddTTFFontByReader(family string, rd io.Reader) error {
 
 //AddTTFFontByReaderWithOption add font file
 func (gp *Fpdf) AddTTFFontByReaderWithOption(family string, rd io.Reader, option TtfOption) error {
-	subsetFont := new(SubsetFontObj)
-	subsetFont.init(func() *Fpdf {
-		return gp
-	})
-	subsetFont.SetTtfFontOption(option)
-	subsetFont.SetFamily(family)
-	err := subsetFont.SetTTFByReader(rd)
+	subsetFont, err := SubsetFontByReaderWithOption(family, rd, option)
 	if err != nil {
 		return err
 	}
 
 	return gp.AddTTFFontBySubsetFont(subsetFont)
+}
+
+func SubsetFontByReader(family string, rd io.Reader) (*SubsetFontObj, error) {
+	return SubsetFontByReaderWithOption(family, rd, defaultTtfFontOption())
+}
+
+func SubsetFontByReaderWithOption(family string, rd io.Reader, option TtfOption) (*SubsetFontObj, error) {
+	subsetFont := new(SubsetFontObj)
+	subsetFont.SetTtfFontOption(option)
+	subsetFont.SetFamily(family)
+	subsetFont.CharacterToGlyphIndex = NewMapOfCharacterToGlyphIndex()
+	err := subsetFont.SetTTFByReader(rd)
+	return subsetFont, err
 }
 
 func (gp *Fpdf) AddTTFFontBySubsetFont(subsetFont *SubsetFontObj) error {
@@ -1257,6 +1264,10 @@ func (gp *Fpdf) AddTTFFontBySubsetFont(subsetFont *SubsetFontObj) error {
 		actualSubsetFont.AddChars(subsetFont.CharacterToGlyphIndex.AllKeysString())
 		return nil
 	}
+
+	subsetFont.init(func() *Fpdf {
+		return gp
+	})
 
 	unicodemap := new(UnicodeMap)
 	unicodemap.init(func() *Fpdf {

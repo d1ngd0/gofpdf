@@ -9,6 +9,40 @@ import (
 	"testing"
 )
 
+func TestFontSerialization(t *testing.T) {
+	ttfr, err := os.Open("test/res/times.ttf")
+	if err != nil {
+		t.Error(err)
+	}
+
+	font, err := SubsetFontByReader("test", ttfr)
+	if err != nil {
+		t.Error(err)
+	}
+
+	b, err := font.Serialize()
+	if err != nil {
+		t.Error(err)
+	}
+
+	font2, err := DeserializeSubsetFont(b)
+	if err != nil {
+		t.Error(err)
+	}
+
+	pdf, err := New(
+		PdfOptionUnit(Unit_IN),
+		PdfOptionPageSize(12, 12),
+	)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if err := pdf.AddTTFFontBySubsetFont(font2); err != nil {
+		t.Error(err)
+	}
+}
+
 func TestTemplateAutoPage(t *testing.T) {
 	pdf, err := New(
 		PdfOptionUnit(Unit_IN),
@@ -45,7 +79,7 @@ func TestTemplateAutoPage(t *testing.T) {
 		t.Error(err)
 	}
 
-	if tmpl2.NumPages() != 2 {
+	if tmpl2.NumPages() != 668 {
 		t.Error(fmt.Errorf("number of pages %d", tmpl.NumPages()))
 	}
 }
@@ -195,6 +229,15 @@ func TestPdfWithImageHolder(t *testing.T) {
 	}
 
 	err = pdf.ImageByHolder(imgH, 20.0, 20, Rect{W: 20, H: 20})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	// because this uses a reader it's pointer is in the wrong place when used
+	// for a second time. we might need to add some extra stuff to reset the
+	// pointer after an image holder is consumed
+	imgH, err = ImageHolderByBytes(bytesOfImg)
 	if err != nil {
 		t.Error(err)
 		return
