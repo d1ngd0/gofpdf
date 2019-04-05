@@ -2,13 +2,11 @@ package gofpdf
 
 import (
 	"fmt"
-	"log"
 	"testing"
 )
 
 func TestBezierSpline(t *testing.T) {
 	// Single segment
-	fmt.Println("Testing single curve")
 	p0, p1, p2, p3 := Point{1.0, 1.0}, Point{2.0, 2.0}, Point{3.0, 1.0}, Point{4.0, 2.0}
 	pts := Points{p0, p1, p2, p3}
 	bs := NewBezierSpline(pts)
@@ -22,7 +20,6 @@ func TestBezierSpline(t *testing.T) {
 	ExpectOutput(t, "d0.5", bs[0].Tangent(0.5), "{3 0}")
 
 	// Multi-segment
-	fmt.Println("Testing multiple curves")
 	p0, p1, p2, p3, p4, p5, p6 := Point{1.0, 7.0}, Point{1.5, 8.0}, Point{1.5, 7.0}, Point{2.0, 8.0}, Point{2.5, 9.0}, Point{2.5, 8.0}, Point{3.0, 9.0}
 	pts = Points{p0, p1, p2, p3, p4, p5, p6}
 	bs = NewBezierSpline(pts)
@@ -43,5 +40,4 @@ func ExpectOutput(t *testing.T, name string, a interface{}, b string) {
 		t.Errorf("Error for %v: Expected %v, got %v\n", name, b, a)
 		return
 	}
-	log.Printf("Passed %v: %v\n", name, b)
 }

@@ -43,6 +43,29 @@ func TestFontSerialization(t *testing.T) {
 	}
 }
 
+func TestImageObj(t *testing.T) {
+	pdf, err := New(
+		PdfOptionUnit(Unit_IN),
+		PdfOptionPageSize(12, 12),
+	)
+	pdf.AddPage()
+
+	holder, err := ImageHolderByPath("test/res/gopher01.jpg")
+	if err != nil {
+		t.Error(err)
+	}
+
+	img, err := NewImageObj(holder)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = pdf.ImageByObj(img, 0, 0, Rect{W: 0, H: 0})
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestTemplateAutoPage(t *testing.T) {
 	pdf, err := New(
 		PdfOptionUnit(Unit_IN),
@@ -137,51 +160,56 @@ func TestAutoWidth(t *testing.T) {
 	}
 }
 
-func BenchmarkPdfWithImageHolder(b *testing.B) {
-
-	err := initTesting()
-	if err != nil {
-		b.Error(err)
-		return
-	}
-
-	pdf, err := New(PdfOptionPageSize(595.28, 841.89)) //595.28, 841.89 = A4
+func BenchmarkPdfWithImageObj(b *testing.B) {
+	pdf, err := New(
+		PdfOptionUnit(Unit_IN),
+		PdfOptionPageSize(12, 12),
+	)
 	if err != nil {
 		b.Error(err)
 	}
 	pdf.AddPage()
-	err = pdf.AddTTFFont("loma", "./test/res/times.ttf")
+
+	holder, err := ImageHolderByPath("test/res/gopher01.jpg")
 	if err != nil {
 		b.Error(err)
-		return
 	}
 
-	err = pdf.SetFont("loma", "", 14)
-	if err != nil {
-		log.Print(err.Error())
-		return
-	}
-
-	bytesOfImg, err := ioutil.ReadFile("./test/res/chilli.jpg")
+	img, err := NewImageObj(holder)
 	if err != nil {
 		b.Error(err)
-		return
 	}
 
-	imgH, err := ImageHolderByBytes(bytesOfImg)
-	if err != nil {
-		b.Error(err)
-		return
-	}
 	for i := 0; i < b.N; i++ {
-		pdf.ImageByHolder(imgH, 20.0, float64(i)*2.0, Rect{W: 20, H: 20})
+		err = pdf.ImageByObj(img, 0, 0, Rect{W: 0, H: 0})
+		if err != nil {
+			b.Error(err)
+		}
 	}
+}
 
-	pdf.SetX(250)
-	pdf.SetY(200)
-	pdf.Cell(10, 10, "gopher and gopher")
+func BenchmarkPdfWithImageHolder(b *testing.B) {
+	pdf, err := New(
+		PdfOptionUnit(Unit_IN),
+		PdfOptionPageSize(12, 12),
+	)
+	if err != nil {
+		b.Error(err)
+	}
+	pdf.AddPage()
 
-	pdf.WritePdf("./test/out/image_bench.pdf")
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		holder, err := newImageBuffByPath("test/res/chilli.jpg")
+		if err != nil {
+			b.Error(err)
+		}
+
+		err = pdf.ImageByHolder(holder, 0, 0, Rect{W: 20, H: 20})
+		if err != nil {
+			b.Error(err)
+		}
+	}
 }
 
 func initTesting() error {

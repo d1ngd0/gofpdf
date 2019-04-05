@@ -48,12 +48,10 @@ func (s *ImageObj) GobDecode(buf []byte) error {
 	return nil
 }
 
-func NewImageObj(img ImageHolder, pro *PDFProtection, funcGetRoot func() *Fpdf) (*ImageObj, error) {
+func NewImageObj(img ImageHolder) (*ImageObj, error) {
 	imgobj := new(ImageObj)
 	imgobj.imageid = img.ID()
 	imgobj.procsetid = fmt.Sprintf("I%s", imgobj.imageid)
-	imgobj.pdfProtection = pro
-	imgobj.getRoot = funcGetRoot
 	if err := imgobj.SetImage(img); err != nil {
 		return imgobj, err
 	}

@@ -635,6 +635,19 @@ func (gp *Fpdf) ImageByHolder(img ImageHolder, x float64, y float64, rect Rect) 
 	return gp.imageByHolder(img, x, y, rect)
 }
 
+func (gp *Fpdf) ImageByObj(img *ImageObj, x float64, y float64, rect Rect) error {
+	gp.UnitsToPointsVar(&x, &y)
+	rect = rect.UnitsToPoints(gp.curr.unit)
+
+	cacheImageIndex, _, err := gp.registerImageByImageObj(img)
+	if err != nil {
+		return err
+	}
+
+	gp.currentContent().AppendStreamImage(cacheImageIndex, x, y, rect)
+	return nil
+}
+
 func (gp *Fpdf) imageByHolder(img ImageHolder, x float64, y float64, rect Rect) error {
 	cacheImageIndex, _, err := gp.registerImageByHolder(img)
 	if err != nil {
@@ -744,10 +757,7 @@ func (gp *Fpdf) hasProcsetIndex(id string, isFont bool) bool {
 
 func (gp *Fpdf) registerImageByHolder(img ImageHolder) (string, int, error) {
 	//create img object
-	imgobj, err := NewImageObj(img, gp.protection(), func() *Fpdf {
-		return gp
-	})
-
+	imgobj, err := NewImageObj(img)
 	if err != nil {
 		return "", 0, err
 	}
