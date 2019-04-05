@@ -160,6 +160,103 @@ func TestAutoWidth(t *testing.T) {
 	}
 }
 
+func BenchmarkTemplateSerializtion(b *testing.B) {
+	pdf, err := New(
+		PdfOptionUnit(Unit_IN),
+		PdfOptionPageSize(12, 12),
+	)
+
+	pdf.AddPage()
+	pdf.AddTTFFont("a", "test/res/times.ttf")
+	pdf.SetFont("a", "", 12)
+
+	if err != nil {
+		b.Error(err)
+	}
+
+	pdf.AddPage()
+	pdf.Line(0, 0, 12, 12)
+
+	pdf.AddPage()
+	pdf.Line(0, 0, 12, 12)
+
+	for x := 0; x < 5; x++ {
+		holder, err := newImageBuffByPath("test/res/chilli.jpg")
+		if err != nil {
+			b.Error(err)
+		}
+
+		err = pdf.ImageByHolder(holder, 0, 0, Rect{W: 20, H: 20})
+		if err != nil {
+			b.Error(err)
+		}
+	}
+
+	tmpl, err := pdf.Template(Point{})
+	if err != nil {
+		b.Error(err)
+	}
+
+	bb, err := tmpl.Serialize()
+	if err != nil {
+		b.Error(err)
+	}
+
+	b.Run("Serialization", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, err := tmpl.Serialize()
+			if err != nil {
+				b.Error(err)
+			}
+		}
+	})
+
+	b.Run("Deserialize", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, err := DeserializeTemplate(bb)
+			if err != nil {
+				b.Error(err)
+			}
+		}
+	})
+}
+
+func BenchmarkFontSerialization(b *testing.B) {
+	ttfr, err := os.Open("test/res/times.ttf")
+	if err != nil {
+		b.Error(err)
+	}
+
+	font, err := SubsetFontByReader(ttfr)
+	if err != nil {
+		b.Error(err)
+	}
+
+	bb, err := font.Serialize()
+	if err != nil {
+		b.Error(err)
+	}
+
+	b.Run("Serialization", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, err := font.Serialize()
+			if err != nil {
+				b.Error(err)
+			}
+		}
+	})
+
+	b.Run("Deserialize", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_, err := DeserializeSubsetFont(bb)
+			if err != nil {
+				b.Error(err)
+			}
+		}
+	})
+
+}
+
 func BenchmarkPdfWithImageObj(b *testing.B) {
 	pdf, err := New(
 		PdfOptionUnit(Unit_IN),
