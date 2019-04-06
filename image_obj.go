@@ -2,6 +2,7 @@ package gofpdf
 
 import (
 	"bytes"
+	"encoding/gob"
 	"fmt"
 	"image"
 	_ "image/jpeg"
@@ -26,6 +27,20 @@ type ImageObj struct {
 	procsetid     string
 	imageid       string
 	getRoot       func() *Fpdf
+}
+
+func (i *ImageObj) Serialize() ([]byte, error) {
+	var b bytes.Buffer
+	enc := gob.NewEncoder(&b)
+	err := enc.Encode(i)
+	return b.Bytes(), err
+}
+
+func DeserializeSubsetFont(b []byte) (*ImageObj, error) {
+	var i ImageObj
+	dec := gob.NewDecoder(bytes.NewReader(b))
+	err := dec.Decode(&i)
+	return &i, err
 }
 
 func (s *ImageObj) GobEncode() ([]byte, error) {
