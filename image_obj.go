@@ -36,7 +36,7 @@ func (i *ImageObj) Serialize() ([]byte, error) {
 	return b.Bytes(), err
 }
 
-func DeserializeSubsetFont(b []byte) (*ImageObj, error) {
+func DeserializeImage(b []byte) (*ImageObj, error) {
 	var i ImageObj
 	dec := gob.NewDecoder(bytes.NewReader(b))
 	err := dec.Decode(&i)
