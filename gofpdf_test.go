@@ -381,22 +381,6 @@ func TestPdfWithImageHolder(t *testing.T) {
 	pdf.WritePdf("./test/out/image_test.pdf")
 }
 
-/*
-func TestBuffer(t *testing.T) {
-	b := bytes.NewReader([]byte("ssssssss"))
+func BenchmarkProtobuf(b *testing.B) {
 
-	b1, err := ioutil.ReadAll(b)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	fmt.Printf("->%s\n", string(b1))
-	b.Seek(0, 0)
-	b2, err := ioutil.ReadAll(b)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	fmt.Printf("+>%s\n", string(b2))
-}*/
+}
