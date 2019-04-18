@@ -69,6 +69,8 @@ func (gp *Fpdf) TransformScale(scaleWd, scaleHt, x, y float64) error {
 		return fmt.Errorf("scale factor cannot be zero")
 	}
 
+	y = gp.GetBoundaryHeight(PageBoundaryMedia) - y
+
 	scaleWd /= 100
 	scaleHt /= 100
 
