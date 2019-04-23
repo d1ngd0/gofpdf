@@ -18,6 +18,7 @@ package gofpdf
  */
 
 import (
+	"bytes"
 	"crypto/sha1"
 	"encoding/gob"
 	"errors"
@@ -235,9 +236,7 @@ func (t *FpdfTpl) Serialize() ([]byte, error) {
 // template
 func DeserializeTemplate(b []byte) (Template, error) {
 	tpl := new(FpdfTpl)
-	bb := bp.GetFilledBuffer(b)
-	defer bp.PutBuffer(bb)
-	dec := gob.NewDecoder(bb)
+	dec := gob.NewDecoder(bytes.NewReader(b))
 	err := dec.Decode(tpl)
 	if err != nil {
 	}
