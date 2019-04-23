@@ -160,7 +160,7 @@ func TestAutoWidth(t *testing.T) {
 	}
 }
 
-func BenchmarkTemplateSerializtion(b *testing.B) {
+func BenchmarkTemplateSerialization(b *testing.B) {
 	pdf, err := New(
 		PdfOptionUnit(Unit_IN),
 		PdfOptionPageSize(12, 12),
@@ -255,6 +255,41 @@ func BenchmarkFontSerialization(b *testing.B) {
 		}
 	})
 
+}
+
+func BenchmarkImageSerialization(b *testing.B) {
+	holder, err := ImageHolderByPath("test/res/gopher01.jpg")
+	if err != nil {
+		b.Error(err)
+	}
+
+	img, err := NewImageObj(holder)
+	if err != nil {
+		b.Error(err)
+	}
+
+	bs, err := img.Serialize()
+	if err != nil {
+		b.Error(err)
+	}
+
+	b.Run("Serialize", func(b *testing.B) {
+		for x := 0; x < b.N; x++ {
+			_, err := img.Serialize()
+			if err != nil {
+				b.Error(err)
+			}
+		}
+	})
+
+	b.Run("Deserialize", func(b *testing.B) {
+		for x := 0; x < b.N; x++ {
+			_, err = DeserializeImage(bs)
+			if err != nil {
+				b.Error(err)
+			}
+		}
+	})
 }
 
 func BenchmarkPdfWithImageObj(b *testing.B) {
@@ -379,8 +414,4 @@ func TestPdfWithImageHolder(t *testing.T) {
 	pdf.Cell(20, 20, "gopher and gopher")
 
 	pdf.WritePdf("./test/out/image_test.pdf")
-}
-
-func BenchmarkProtobuf(b *testing.B) {
-
 }

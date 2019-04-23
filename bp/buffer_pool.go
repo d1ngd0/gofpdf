@@ -1,5 +1,8 @@
 package bp
 
+// The actual performance advantages of this are negligable,
+// however there is more stable memory utilization so.... I guess
+
 import (
 	"bytes"
 	"sync"
