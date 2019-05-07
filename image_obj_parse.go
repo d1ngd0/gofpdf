@@ -90,8 +90,8 @@ func parseImg(raw *bytes.Reader) (imgInfo, error) {
 	}
 	info.formatName = formatname
 
-	if formatname == "jpeg" {
-
+	switch formatname {
+	case "jpeg":
 		err = parseImgJpg(&info, imgConfig)
 		if err != nil {
 			return info, err
@@ -101,8 +101,7 @@ func parseImg(raw *bytes.Reader) (imgInfo, error) {
 		if err != nil {
 			return info, err
 		}
-
-	} else if formatname == "png" {
+	case "png":
 		err = parsePng(raw, &info, imgConfig)
 		if err != nil {
 			return info, err
