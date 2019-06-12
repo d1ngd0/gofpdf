@@ -53,6 +53,8 @@ type Fpdf struct {
 func (gp *Fpdf) SetPageBoundary(pb *PageBoundary) {
 	if page := gp.currentPage(); page != nil {
 		page.pageOption.AddPageBoundary(pb)
+	} else {
+		gp.curr.pageOption.AddPageBoundary(pb)
 	}
 }
 
