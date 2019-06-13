@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"sync"
 
 	"io"
 
@@ -19,6 +20,7 @@ var ErrCharNotFound = errors.New("char not found")
 
 //SubsetFontObj pdf subsetFont object
 type SubsetFontObj struct {
+	mtx                   sync.Mutex
 	ttfp                  core.TTFParser
 	procsetid             string
 	Family                string
@@ -55,6 +57,8 @@ func (s *SubsetFontObj) GobDecode(buf []byte) error {
 func (s *SubsetFontObj) copy() *SubsetFontObj {
 	subFont := *s
 	subFont.CharacterToGlyphIndex = subFont.CharacterToGlyphIndex.copy()
+	// reset the sync mutex to ensure it is unlocked
+	subFont.mtx = sync.Mutex{}
 	return &subFont
 }
 
@@ -155,6 +159,9 @@ func (s *SubsetFontObj) AddChars(txt string) error {
 	if s == nil {
 		return nil
 	}
+
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
 
 	for _, runeValue := range txt {
 		if s.CharacterToGlyphIndex.KeyExists(runeValue) {
