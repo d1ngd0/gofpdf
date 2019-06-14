@@ -54,6 +54,10 @@ func (s *SubsetFontObj) GobDecode(buf []byte) error {
 	return geh.DecodeMany(buf, &s.ttfp, &s.procsetid, &s.Family, &s.CharacterToGlyphIndex, &s.ttfFontOption)
 }
 
+func (s *SubsetFontObj) Copy() *SubsetFontObj {
+	return s.copy()
+}
+
 func (s *SubsetFontObj) copy() *SubsetFontObj {
 	subFont := *s
 	subFont.CharacterToGlyphIndex = subFont.CharacterToGlyphIndex.copy()
