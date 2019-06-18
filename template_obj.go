@@ -74,7 +74,7 @@ func (tpl *TemplateObj) write(w io.Writer, objID int) error {
 		}
 		for x := 0; x < len(tpl.templates); x++ {
 			id := fmt.Sprintf("TPL%s", tpl.templates[x].ID())
-			fmt.Fprintf(w, "/TPL%s %d 0 R\n", id, tpl.getProcsetIndex(id)+1)
+			fmt.Fprintf(w, "/%s %d 0 R\n", id, tpl.getProcsetIndex(id)+1)
 		}
 		io.WriteString(w, ">>\n")
 	}
