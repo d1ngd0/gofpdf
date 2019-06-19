@@ -7,17 +7,18 @@ import (
 
 // Page boundary types
 const (
-	PageBoundaryMedia = iota
-	PageBoundaryCrop
+	PageBoundaryCrop = iota
+	PageBoundaryMedia
 	PageBoundaryBleed
 	PageBoundaryTrim
 	PageBoundaryArt
+	// the end of the road
 	pageBoundaryMax
 )
 
 //PageOption option of page
 type PageOption struct {
-	PageBoundaries []*PageBoundary
+	PageBoundaries [5]*PageBoundary
 }
 
 func (po *PageOption) IsEmpty() bool {
@@ -29,25 +30,36 @@ func (gp *Fpdf) NewPageOption(w, h float64) *PageOption {
 }
 
 func NewPageOption(u int, w, h float64) (po *PageOption) {
-	po = new(PageOption)
+	po = &PageOption{}
 	po.AddPageBoundary(NewPageSizeBoundary(u, w, h))
 	return
 }
 
 func (po *PageOption) AddPageBoundary(pb *PageBoundary) {
-	for x := 0; x < len(po.PageBoundaries); x++ {
-		if po.PageBoundaries[x].Type == pb.Type {
-			po.PageBoundaries[x] = pb
-			return
-		}
-	}
-
-	po.PageBoundaries = append(po.PageBoundaries, pb)
+	po.PageBoundaries[pb.Type] = pb
 }
 
 func (po *PageOption) writePageBoundaries(w io.Writer) error {
-	for x := 0; x < len(po.PageBoundaries); x++ {
-		if err := po.PageBoundaries[x].write(w); err != nil {
+	var cpb *PageBoundary
+
+	for x := 0; x < pageBoundaryMax; x++ {
+		if po.PageBoundaries[x] != nil {
+			cpb = po.PageBoundaries[x]
+		}
+
+		if cpb == nil {
+			continue
+		}
+		// run the last thing that wasn't null
+		_, err := fmt.Fprintf(w, "/%s [%.2f %.2f %.2f %.2f]\n",
+			PageBoundaryType(x),
+			cpb.Position.X,
+			cpb.Position.Y,
+			cpb.Size.W,
+			cpb.Size.H,
+		)
+
+		if err != nil {
 			return err
 		}
 	}
@@ -55,22 +67,29 @@ func (po *PageOption) writePageBoundaries(w io.Writer) error {
 	return nil
 }
 
-func (po *PageOption) GetBoundary(t int) (pb *PageBoundary) {
-	for x := 0; x < len(po.PageBoundaries); x++ {
-		if po.PageBoundaries[x].Type == t {
-			pb = po.PageBoundaries[x]
-			break
+func (po *PageOption) GetBoundary(t int) *PageBoundary {
+	for ; t >= PageBoundaryMedia; t-- {
+		if po.PageBoundaries[t] != nil {
+			return po.PageBoundaries[t]
 		}
 	}
-	return
+
+	return nil
 }
 
 func (po PageOption) merge(po2 PageOption) PageOption {
 	var pageOpt PageOption
-	copy(pageOpt.PageBoundaries, po.PageBoundaries)
-	for x := 0; x < len(po2.PageBoundaries); x++ {
-		pageOpt.AddPageBoundary(po2.PageBoundaries[x])
+
+	for x := 0; x < pageBoundaryMax; x++ {
+		if po.PageBoundaries[x] != nil {
+			pageOpt.AddPageBoundary(po.PageBoundaries[x])
+		}
+
+		if po2.PageBoundaries[x] != nil {
+			pageOpt.AddPageBoundary(po2.PageBoundaries[x])
+		}
 	}
+
 	return pageOpt
 }
 
@@ -80,13 +99,8 @@ type PageBoundary struct {
 	Size     Rect
 }
 
-func (pb *PageBoundary) write(w io.Writer) error {
-	_, err := fmt.Fprintf(w, "/%s [%.2f %.2f %.2f %.2f]\n", pb.TypeString(), pb.Position.X, pb.Position.Y, pb.Size.W, pb.Size.H)
-	return err
-}
-
-func (pb *PageBoundary) TypeString() string {
-	switch pb.Type {
+func PageBoundaryType(t int) string {
+	switch t {
 	case PageBoundaryMedia:
 		return "MediaBox"
 	case PageBoundaryCrop:
