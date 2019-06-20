@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 
-	"github.com/d1ngd0/gofpdf/bp"
+	"github.com/ISeeMe/gofpdf/bp"
 )
 
 func EncodeMany(v ...interface{}) ([]byte, error) {

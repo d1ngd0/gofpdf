@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/d1ngd0/gofpdf/bp"
+	"github.com/ISeeMe/gofpdf/bp"
 )
 
 //ErrFontLicenseDoesNotAllowEmbedding Font license does not allow embedding
@@ -104,7 +104,7 @@ func (f *FontMaker) MakeDefinitionFile(gofontname string, mappath string, export
 	str := ""
 	str += "package fonts //change this\n"
 	str += "import (\n"
-	str += "	\"github.com/d1ngd0/gofpdf\"\n"
+	str += "	\"github.com/ISeeMe/gofpdf\"\n"
 	str += ")\n"
 	str += "type " + gofontname + " struct {\n"
 	str += "\tfamily string\n"

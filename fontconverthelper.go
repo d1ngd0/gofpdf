@@ -3,7 +3,7 @@ package gofpdf
 import (
 	"strconv"
 
-	"github.com/d1ngd0/gofpdf/bp"
+	"github.com/ISeeMe/gofpdf/bp"
 )
 
 func FontConvertHelper_Cw2Str(cw FontCw) string {

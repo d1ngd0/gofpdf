@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/d1ngd0/gofpdf/bp"
+	"github.com/ISeeMe/gofpdf/bp"
 )
 
 const contentType = "Content"
