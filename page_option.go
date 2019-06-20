@@ -54,9 +54,9 @@ func (po *PageOption) writePageBoundaries(w io.Writer) error {
 		_, err := fmt.Fprintf(w, "/%s [%.2f %.2f %.2f %.2f]\n",
 			PageBoundaryType(x),
 			cpb.Position.X,
+			cpb.Position.Y+cpb.Size.H,
+			cpb.Size.W+cpb.Position.X,
 			cpb.Position.Y,
-			cpb.Size.W,
-			cpb.Size.H,
 		)
 
 		if err != nil {
