@@ -17,7 +17,7 @@ type Current struct {
 	Font_Type      int // CURRENT_FONT_TYPE_IFONT or  CURRENT_FONT_TYPE_SUBSET
 
 	Font_ISubset *SubsetFontObj // Font_Type == CURRENT_FONT_TYPE_SUBSET
-
+	Text_Option  TextOption
 	//page
 	IndexOfPageObj int
 

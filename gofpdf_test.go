@@ -153,7 +153,7 @@ func TestAutoWidth(t *testing.T) {
 		Align:  Top | Left,
 		Border: 0,
 		Float:  Left,
-	})
+	}, TextOption{})
 
 	if err != nil {
 		t.Error(err)
